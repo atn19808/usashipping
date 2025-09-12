@@ -1,7 +1,14 @@
 {
   "system": {
     "theme": "usashipping",
-    "extensions": []
+    "extensions": [
+      {
+        "name": "google_login",
+        "resolve": "node_modules/@evershop/google_login",
+        "enabled": true,
+        "priority": 10
+      }
+    ]
   },
   "themeConfig": {
     "logo": {

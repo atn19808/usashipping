@@ -18,6 +18,7 @@
   "author": "atn1908",
   "license": "UNLICENSED",
   "dependencies": {
-    "@evershop/evershop": "1.2.2"
+    "@evershop/evershop": "1.2.2",
+    "@evershop/google_login": "^1.2.1"
   }
 }
