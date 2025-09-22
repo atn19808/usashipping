@@ -1,6 +1,5 @@
 import PropTypes from 'prop-types';
 import React from 'react';
-import { Field } from '@components/common/form/Field';
 import { Form } from '@components/common/form/Form';
 import './LoginForm.scss';
 import { _ } from '@evershop/evershop/src/lib/locale/translate';
@@ -11,8 +10,6 @@ import Area from '@components/common/Area';
 export default function LoginForm({
   action,
   homeUrl,
-  registerUrl,
-  forgotPasswordUrl
 }) {
   const [error, setError] = React.useState(null);
 
@@ -34,40 +31,13 @@ export default function LoginForm({
                 setError(response.error.message);
               }
             }}
-            btnText={_('SIGN IN')}
+            submitBtn={false}
           >
             <Area
               id="loginFormInner"
-              coreComponents={[
-                {
-                  component: { default: Field },
-                  props: {
-                    name: 'email',
-                    type: 'text',
-                    placeholder: _('Email'),
-                    validationRules: ['notEmpty', 'email']
-                  },
-                  sortOrder: 10
-                },
-                {
-                  component: { default: Field },
-                  props: {
-                    name: 'password',
-                    type: 'password',
-                    placeholder: _('Password'),
-                    validationRules: ['notEmpty']
-                  },
-                  sortOrder: 20
-                }
-              ]}
+              coreComponents={[]}
             />
           </Form>
-          <div className="text-center mt-4 gap-8 flex justify-center">
-            <a className="text-interactive" href={registerUrl}>
-              {_('Create an account')}
-            </a>
-            <a href={forgotPasswordUrl}>{_('Forgot your password?')}</a>
-          </div>
         </div>
       </div>
     </div>
