@@ -1,19 +1,24 @@
-import ProductList from "@components/frontStore/catalog/product/list/List";
-import { _ } from "@evershop/evershop/src/lib/locale/translate";
-import PropTypes from "prop-types";
 import React from "react";
+import PropTypes from "prop-types";
+import { _ } from "@evershop/evershop/src/lib/locale/translate";
+import ProductList from '../../components/ProductList';
+import mapProductWithCart from '../../common/ProductUtil';
 
-export default function FeaturedProducts({ collection }) {
+export default function FeaturedProducts({ collection, cart }) {
+  const { products: { items } } = collection;
   if (!collection) {
     return null;
   }
+
+  const productsWithCartInfo = mapProductWithCart(items, cart);
+
   return (
     <div className="pt-3">
       <div className="page-width">
         <h2 className="mt-3 mb-3 text-center uppercase  tracking-widest">
           {collection.name}
         </h2>
-        <ProductList products={collection.products.items} countPerRow={3} />
+        <ProductList products={productsWithCartInfo} countPerRow={3} />
       </div>
     </div>
   );
@@ -21,8 +26,6 @@ export default function FeaturedProducts({ collection }) {
 
 FeaturedProducts.propTypes = {
   collection: PropTypes.shape({
-    collectionId: PropTypes.number.isRequired,
-    name: PropTypes.string.isRequired,
     products: PropTypes.shape({
       items: PropTypes.arrayOf(
         PropTypes.shape({
@@ -41,16 +44,32 @@ FeaturedProducts.propTypes = {
           image: PropTypes.shape({
             alt: PropTypes.string.isRequired,
             url: PropTypes.string.isRequired,
-          }).isRequired,
+          }),
           url: PropTypes.string.isRequired,
         })
       ).isRequired,
     }).isRequired,
   }).isRequired,
+  cart: PropTypes.shape({
+    items: PropTypes.arrayOf(
+      PropTypes.shape({
+        productId: PropTypes.string,
+        qty: PropTypes.number,
+        uuid: PropTypes.string,
+      })
+    )
+  })
 };
 
 FeaturedProducts.defaultProps = {
-  featuredProducts: [],
+  collection: {
+    products: {
+      items: []
+    }
+  },
+  cart: {
+    items: []
+  }
 };
 
 export const layout = {
@@ -61,12 +80,12 @@ export const layout = {
 export const query = `
   query query {
     collection (code: "homepage") {
-      collectionId
-      name
       products (filters: [{key: "limit", operation: eq, value: "6"}]) {
         items {
+          uuid
           productId
           name
+          sku
           price {
             regular {
               value
@@ -82,7 +101,19 @@ export const query = `
             url: listing
           }
           url
+          inventory {
+            isInStock
+            stockAvailability
+            manageStock
+          }
         }
+      }
+    }
+    cart {
+      items {
+        uuid
+        productId
+        qty
       }
     }
   }

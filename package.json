@@ -1,8 +1,7 @@
 {
-  "name": "evershop",
+  "name": "usashipping",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "description": "USA Shopping",
   "scripts": {
     "start": "evershop start",
     "build": "evershop build",
@@ -16,9 +15,10 @@
   "workspaces": [
     "extensions/*"
   ],
-  "author": "EverShop",
-  "license": "ISC",
+  "author": "atn1908",
+  "license": "UNLICENSED",
   "dependencies": {
-    "@evershop/evershop": "1.2.2"
+    "@evershop/evershop": "1.2.2",
+    "@evershop/google_login": "^1.2.1"
   }
 }

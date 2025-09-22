@@ -1,0 +1,16 @@
+{
+    "compilerOptions": {
+        "baseUrl": ".",
+        "paths": {
+            "@usp-components/*": [
+                "./themes/usashipping/components/*",
+            ],
+            "@eve-components/*": [
+                "./node_modules/@evershop/evershop/src/components/*"
+            ],
+            "@default-theme/*": [
+                "./node_modules/@evershop/evershop/src/modules/*/pages/*"
+            ]
+        }
+    }
+}
