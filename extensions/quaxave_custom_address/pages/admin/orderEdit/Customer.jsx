@@ -51,11 +51,13 @@ Customer.propTypes = {
     customerEmail: PropTypes.string.isRequired,
     customerUrl: PropTypes.string,
     shippingAddress: PropTypes.shape({
+      senderFullName: PropTypes.string.isRequired,
+      senderTelephone: PropTypes.string.isRequired,
       fullName: PropTypes.string.isRequired,
+      telephone: PropTypes.string.isRequired,
       address1: PropTypes.string.isRequired,
       city: PropTypes.string.isRequired,
       postcode: PropTypes.string.isRequired,
-      telephone: PropTypes.string.isRequired,
       province: PropTypes.shape({
         code: PropTypes.string.isRequired,
         name: PropTypes.string.isRequired

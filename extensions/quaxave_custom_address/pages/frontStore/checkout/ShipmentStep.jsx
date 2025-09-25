@@ -26,9 +26,6 @@ export default function ShipmentStep({
   const [display, setDisplay] = React.useState(false);
   const { canStepDisplay, addStep } = useCheckoutStepsDispatch();
 
-  // TODO: remove
-  console.log('custom');
-
   React.useEffect(() => {
     addStep({
       id: 'shipment',
@@ -71,10 +68,10 @@ ShipmentStep.propTypes = {
     addresses: PropTypes.arrayOf(
       PropTypes.shape({
         uuid: PropTypes.string.isRequired,
+        senderFullName: PropTypes.string.isRequired,
+        senderTelephone: PropTypes.string.isRequired,
         fullName: PropTypes.string.isRequired,
-        address1: PropTypes.string.isRequired,
-        city: PropTypes.string.isRequired,
-        postcode: PropTypes.string.isRequired,
+        telephone: PropTypes.string.isRequired,
         country: PropTypes.shape({
           name: PropTypes.string.isRequired,
           code: PropTypes.string.isRequired
@@ -83,7 +80,9 @@ ShipmentStep.propTypes = {
           name: PropTypes.string,
           code: PropTypes.string
         }),
-        telephone: PropTypes.string.isRequired,
+        city: PropTypes.string.isRequired,
+        address1: PropTypes.string.isRequired,
+        postcode: PropTypes.string.isRequired,
         isDefault: PropTypes.bool.isRequired
       })
     ).isRequired
@@ -124,7 +123,10 @@ export const query = `
     account: currentCustomer {
       addresses {
         uuid
+        senderFullName
+        senderTelephone
         fullName
+        telephone
         address1
         city
         postcode
@@ -136,7 +138,6 @@ export const query = `
           name
           code
         }
-        telephone
         isDefault
       }
     }
@@ -145,9 +146,11 @@ export const query = `
       shippingMethodName
       shippingAddress {
         id: cartAddressId
+        senderFullName
+        senderTelephone
         fullName
-        postcode
         telephone
+        postcode
         country {
           code
           name
