@@ -74,7 +74,7 @@ export function StepContent({
       <div className="grid grid-cols-2 gap-5 mb-5">
         {addresses.map((address) => (
           <div className="border rounded border-gray-300 p-5">
-            <AddressSummary key={address.uuid} address={address} />
+            <AddressSummary key={address.uuid} address={address} isShowSender={true} />
             <div className="flex justify-end gap-5">
               <a
                 href="#"

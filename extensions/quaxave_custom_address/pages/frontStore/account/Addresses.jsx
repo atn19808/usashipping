@@ -31,7 +31,7 @@ export default function Addresses({
                 : 'border rounded border-gray-300 p-5'
             }
           >
-            <AddressSummary key={address.uuid} address={address} />
+            <AddressSummary key={address.uuid} address={address} isShowSender={true} />
             <div className="flex justify-end gap-5">
               <a
                 href="#"

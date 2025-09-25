@@ -108,9 +108,11 @@ export function StepContent({
       </div>
     );
   }
+
   if (queryError) {
     return <div className="p-8 text-critical">{error.message}</div>;
   }
+
   return (
     <div>
       <Form
@@ -181,7 +183,6 @@ export function StepContent({
         <div className="form-submit-button">
           <Button
             onAction={() => {
-              console.log('test1');
               setLoading(true);
               document
                 .getElementById('checkoutPaymentForm')
