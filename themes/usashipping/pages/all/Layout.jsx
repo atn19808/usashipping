@@ -7,8 +7,6 @@ import "./tailwind.scss";
 
 // TODO: better just use Footer
 export default function Layout() {
-  const year = "2025";
-  const domainName = "Domain-Name";
   return (
     <>
       <LoadingBar />
