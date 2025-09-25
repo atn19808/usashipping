@@ -1,0 +1,5 @@
+{
+  "methods": ["POST"],
+  "path": "/carts/:cart_id/custom-addresses",
+  "access": "public"
+}
