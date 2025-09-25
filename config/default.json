@@ -10,6 +10,12 @@
         "resolve": "node_modules/@evershop/google_login",
         "enabled": true,
         "priority": 10
+      },
+      {
+        "name": "quaxave_custom_address",
+        "resolve": "extensions/quaxave_custom_address",
+        "enabled": true,
+        "priority": 50
       }
     ]
   },
