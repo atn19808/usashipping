@@ -51,8 +51,6 @@ export function CustomerAddressForm({
     setSelectedCountry(address?.country?.code);
   }, [address]);
 
-  // TODO: remove
-  console.log('isReceiverOnly', isReceiverOnly)
   let senderAndReceiverNameAndTelephone = [
     {
       component: { default: NameAndTelephone },

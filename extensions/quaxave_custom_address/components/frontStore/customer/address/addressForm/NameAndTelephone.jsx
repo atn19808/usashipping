@@ -6,7 +6,6 @@ import { _ } from '@evershop/evershop/src/lib/locale/translate';
 export function NameAndTelephone({
   input,
   getErrorMessage,
-  isFieldRequired
 }) {
   // TODO: telephone should have custom validation
   return (
