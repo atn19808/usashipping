@@ -28,6 +28,12 @@
         "resolve": "extensions/quaxave_custom_address",
         "enabled": true,
         "priority": 50
+      },
+      {
+        "name": "quaxave_fetch_pricing",
+        "resolve": "extensions/quaxave_fetch_pricing",
+        "enabled": true,
+        "priority": 60
       }
     ]
   },
