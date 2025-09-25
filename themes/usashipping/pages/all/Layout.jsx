@@ -1,9 +1,9 @@
 import React from "react";
 import Area from "@components/common/Area";
 import LoadingBar from "@components/common/LoadingBar";
-import "../../css/global.scss";
-import "./Layout.scss";
 import "./tailwind.scss";
+import "../../css/global.scss";
+import "@evershop/evershop/src/modules/cms/pages/frontStore/all/Layout.scss";
 
 export default function Layout() {
   return (
