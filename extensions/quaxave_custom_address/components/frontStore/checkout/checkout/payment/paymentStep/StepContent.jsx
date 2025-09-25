@@ -18,9 +18,11 @@ const QUERY = `
     cart(id: $cartId) {
       shippingAddress {
         id: cartAddressId
+        senderFullName
+        senderTelephone
         fullName
-        postcode
         telephone
+        postcode
         country {
           code
           name
@@ -179,6 +181,7 @@ export function StepContent({
         <div className="form-submit-button">
           <Button
             onAction={() => {
+              console.log('test1');
               setLoading(true);
               document
                 .getElementById('checkoutPaymentForm')
@@ -200,8 +203,8 @@ StepContent.propTypes = {
     billingAddress: PropTypes.shape({
       id: PropTypes.number,
       fullName: PropTypes.string,
-      postcode: PropTypes.string,
       telephone: PropTypes.string,
+      postcode: PropTypes.string,
       country: PropTypes.shape({
         code: PropTypes.string,
         name: PropTypes.string
