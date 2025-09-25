@@ -25,14 +25,21 @@ export default function Customer({
         )}
         {!customerUrl && <span>{customerEmail} (Guest Checkout)</span>}
       </Card.Session>
-      <Card.Session title="Contact information">
+      <Card.Session title="Customer information">
         <div>
-          <a href="#" className="text-interactive hover:underline">
+          <a href={`mailto:${customerEmail}`} className="text-interactive hover:underline">
             {customerEmail}
           </a>
         </div>
+      </Card.Session>
+      <Card.Session title="Sender information">
         <div>
-          <span>{shippingAddress.telephone}</span>
+          <span>{shippingAddress.senderFullName}</span>
+        </div>
+        <div>
+          <a href={`tel:${shippingAddress.senderTelephone}`} className="text-interactive hover:underline">
+            {shippingAddress.senderTelephone}
+          </a>
         </div>
       </Card.Session>
       <Card.Session title="Shipping Address">
