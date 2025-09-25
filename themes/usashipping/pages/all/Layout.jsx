@@ -6,8 +6,6 @@ import "./Layout.scss";
 import "./tailwind.scss";
 
 export default function Layout() {
-  const year = "2025";
-  const domainName = "Domain-Name";
   return (
     <>
       <LoadingBar />

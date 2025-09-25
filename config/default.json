@@ -10,6 +10,12 @@
         "resolve": "node_modules/@evershop/google_login",
         "enabled": true,
         "priority": 10
+      },
+      {
+        "name": "quaxave_custom_address",
+        "resolve": "extensions/quaxave_custom_address",
+        "enabled": true,
+        "priority": 50
       }
     ]
   },
@@ -29,5 +35,53 @@
       ]
     },
     "copyRight": "© 2025 Qua Xa Ve. All rights reserved."
+  },
+  "customer": {
+    "addressSchema": {
+      "type": "object",
+      "properties": {
+        "sender_full_name": {
+          "type": "string"
+        },
+        "sender_telephone": {
+          "type": ["string", "number"]
+        },
+        "full_name": {
+          "type": "string"
+        },
+        "telephone": {
+          "type": ["string", "number"]
+        },
+        "address_1": {
+            "type": "string"
+        },
+        "address_2": {
+            "type": "string"
+        },
+        "city": {
+            "type": "string"
+        },
+        "province": {
+            "type": "string"
+        },
+        "country": {
+            "type": "string",
+            "pattern": "^[A-Z]{2}$"
+        },
+        "postcode": {
+            "type": ["string", "number"]
+        }
+      },
+      "required": [
+        "full_name",
+        "telephone",
+        "address_1",
+        "city",
+        "country",
+        "province",
+        "postcode"
+      ],
+      "additionalProperties": true
+    }
   }
 }
