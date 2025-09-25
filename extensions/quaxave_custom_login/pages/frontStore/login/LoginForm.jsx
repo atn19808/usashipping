@@ -1,7 +1,7 @@
 import PropTypes from 'prop-types';
 import React from 'react';
 import { Form } from '@components/common/form/Form';
-import './LoginForm.scss';
+import '@evershop/evershop/src/modules/customer/pages/frontStore/login/LoginForm.scss'
 import { _ } from '@evershop/evershop/src/lib/locale/translate';
 import Area from '@components/common/Area';
 

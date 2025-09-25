@@ -9,6 +9,12 @@
         "name": "google_login",
         "resolve": "node_modules/@evershop/google_login",
         "enabled": true,
+        "priority": 20
+      },
+      {
+        "name": "quaxave_custom_login",
+        "resolve": "extensions/quaxave_custom_login",
+        "enabled": true,
         "priority": 10
       },
       {
