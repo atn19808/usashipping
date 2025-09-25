@@ -1,8 +1,8 @@
 import PropTypes from 'prop-types';
 import React from 'react';
 import { _ } from '@evershop/evershop/src/lib/locale/translate';
-import ProductList from '../../components/ProductList';
-import mapProductWithCart from '../../common/ProductUtil';
+import ProductList from '../../../components/frontStore/productView/List';
+import mapProductWithCart from '../../../components/common/ProductUtil';
 
 export default function Products({ products: { items }, cart }) {
   const productsWithCartInfo = mapProductWithCart(items, cart);
