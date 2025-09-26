@@ -35,6 +35,14 @@
         "enabled": true,
         "priority": 60
       }
+    ],
+    "jobs": [
+      {
+        "name": "fetchRate",
+        "resolve": "@evershop/../../extensions/quaxave_fetch_pricing/jobs/fetchRate.js",
+        "schedule": "0 */12 * * *",
+        "enabled": true
+      }
     ]
   },
   "themeConfig": {

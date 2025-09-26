@@ -4,4 +4,4 @@ module.exports = () => {
     (async function init() {
         await fetchRate();
     })();
-}
+};
