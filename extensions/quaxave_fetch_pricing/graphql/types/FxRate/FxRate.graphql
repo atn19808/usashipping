@@ -1,0 +1,21 @@
+extend type FxRate {
+    fxRateId: String!
+    uuid: String!
+    source: String!
+    target: String!
+    rate: Float!
+    createdAt: DateTime!
+    updatedAt: DateTime!
+}
+
+type FxRateCollection {
+    items: [FxRate]
+    currentPage: Int!
+    total: Int!
+    currentFilters: [Filter]
+}
+
+extend type Query {
+    fxRate(source: String!): FxRate
+    fxRates(filters: [FilterInput]): FxRateCollection
+}
