@@ -1,6 +1,6 @@
 {
   "shop": {
-    "homeUrl": "https://quaxave.com"
+    "homeUrl": "http://localhost:3000"
   },
   "system": {
     "theme": "usashipping",
