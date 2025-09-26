@@ -1,21 +1,13 @@
 type FxRate {
-    fxRateId: String!
-    uuid: String!
-    source: String!
-    target: String!
-    rate: Float!
-    createdAt: DateTime!
-    updatedAt: DateTime!
-}
-
-type FxRateCollection {
-    items: [FxRate]
-    currentPage: Int!
-    total: Int!
-    currentFilters: [Filter]
+    fxRateId: String
+    uuid: String
+    source: String
+    target: String
+    rate: Float
+    createdAt: DateTime
+    updatedAt: DateTime
 }
 
 extend type Query {
-    fxRate(source: String!): FxRate
-    fxRates(filters: [FilterInput]): FxRateCollection
+    fxRate(source: String, target: String): FxRate
 }
