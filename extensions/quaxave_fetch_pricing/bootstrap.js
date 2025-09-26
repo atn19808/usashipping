@@ -1,9 +1,7 @@
-import path from "path";
-import { registerCronJob } from "@evershop/evershop/lib/cronjob";
+const fetchRate = require('./jobs/fetchRate');
 
-registerCronJob({
-  name: "myCronJob",
-  resolve: path.resolve(import.meta.dirname, "jobs/fetchRate.js"),
-  schedule: "0 0 * * *",
-  enabled: true,
-});
+module.exports = () => {
+    (async function init() {
+        await fetchRate();
+    })();
+}

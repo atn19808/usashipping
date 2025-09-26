@@ -1,4 +1,4 @@
-extend type FxRate {
+type FxRate {
     fxRateId: String!
     uuid: String!
     source: String!

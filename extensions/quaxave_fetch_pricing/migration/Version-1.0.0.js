@@ -4,7 +4,7 @@ const { execute } = require('@evershop/postgres-query-builder');
 module.exports = exports = async (connection) => {
     await execute(
     connection,
-    ```
+    `
     CREATE TABLE fx_rate (
         fx_rate_id   INT4 GENERATED ALWAYS AS IDENTITY,
         uuid         UUID DEFAULT gen_random_uuid() NOT NULL,
@@ -17,5 +17,5 @@ module.exports = exports = async (connection) => {
         CONSTRAINT fx_rate_uuid_unq UNIQUE (uuid),
         CONSTRAINT fx_rate_pkey PRIMARY KEY (fx_rate_id)
     );
-    ```);
+    `);
 };
