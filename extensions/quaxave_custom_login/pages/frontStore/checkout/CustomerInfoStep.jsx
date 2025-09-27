@@ -25,10 +25,10 @@ export default function ContactInformationStep({
       id: 'contact',
       title: _('Contact information'),
       previewTitle: _('Contact'),
-      isCompleted: !!customerEmail,
+      isCompleted: currentCustomer !== null && !!customerEmail,
       preview: customerEmail || '',
       sortOrder: 5,
-      editable: !currentCustomer
+      editable: false
     });
   }, []);
 
