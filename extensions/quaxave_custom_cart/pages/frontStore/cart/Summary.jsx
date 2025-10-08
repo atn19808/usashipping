@@ -5,8 +5,9 @@ import Button from '@components/common/form/Button';
 import { _ } from '@evershop/evershop/src/lib/locale/translate';
 import { Tax } from '@components/frontStore/checkout/checkout/summary/cart/Tax';
 import { Total } from '@components/frontStore/checkout/checkout/summary/cart/Total';
+import TotalWeight from '../../../components/frontStore/checkout/checkout/summary/cart/TotalWeight';
 
-function Subtotal({ subTotal }) {
+export function Subtotal({ subTotal }) {
   return (
     <div className="flex justify-between gap-12">
       <div>{_('Sub total')}</div>
@@ -61,6 +62,7 @@ function Summary({
   checkoutUrl,
   cart: {
     totalQty,
+    totalWeight,
     subTotal,
     subTotalInclTax,
     totalTaxAmount,
@@ -73,6 +75,7 @@ function Summary({
   if (totalQty === undefined || totalQty <= 0) {
     return null;
   }
+
   return (
     <div className="summary">
       <div className="grid grid-cols-1 gap-8">
@@ -109,6 +112,17 @@ function Summary({
             {
               // eslint-disable-next-line react/no-unstable-nested-components
               component: {
+                default: TotalWeight
+              },
+              props: {
+                totalWeight: totalWeight
+              },
+              sortOrder: 40,
+              id: 'shoppingCartTotalWeight'
+            },
+            {
+              // eslint-disable-next-line react/no-unstable-nested-components
+              component: {
                 default: Total
               },
               props: {
@@ -116,8 +130,8 @@ function Summary({
                 totalTaxAmount: totalTaxAmount,
                 priceIncludingTax
               },
-              sortOrder: 30,
-              id: 'tax'
+              sortOrder: 60,
+              id: 'shoppingCartTotalPrice'
             }
           ]}
         />
@@ -133,6 +147,11 @@ Summary.propTypes = {
   checkoutUrl: PropTypes.string.isRequired,
   cart: PropTypes.shape({
     totalQty: PropTypes.number,
+    totalWeight: PropTypes.shape({
+      value: PropTypes.number,
+      unit: PropTypes.string,
+      text: PropTypes.string
+    }),
     subTotal: PropTypes.shape({
       value: PropTypes.number,
       text: PropTypes.string
@@ -171,6 +190,11 @@ export const query = `
   query Query {
     cart(id: getContextValue('cartId', null)) {
       totalQty
+      totalWeight {
+        value
+        unit
+        text
+      }
       subTotal {
         value
         text
@@ -183,7 +207,7 @@ export const query = `
         value
         text
       }
-      
+
       totalTaxAmount {
         value
         text

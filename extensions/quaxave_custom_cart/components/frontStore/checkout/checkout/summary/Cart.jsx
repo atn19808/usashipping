@@ -5,9 +5,11 @@ import { Shipping } from '@components/frontStore/checkout/checkout/summary/cart/
 import { Subtotal } from '@components/frontStore/checkout/checkout/summary/cart/Subtotal';
 import { Tax } from '@components/frontStore/checkout/checkout/summary/cart/Tax';
 import { Total } from '@components/frontStore/checkout/checkout/summary/cart/Total';
+import TotalWeight from './cart/TotalWeight';
 
 function CartSummary({
   totalQty,
+  totalWeight,
   subTotal,
   subTotalInclTax,
   grandTotal,
@@ -27,6 +29,7 @@ function CartSummary({
       <Shipping method={shippingMethodName} cost={shippingFeeInclTax.text} />
       {!priceIncludingTax && <Tax amount={totalTaxAmount.text} />}
       <Discount code={coupon} discount={discountAmount.text} />
+      <TotalWeight totalWeight={totalWeight} />
       <Total
         totalTaxAmount={totalTaxAmount}
         total={grandTotal}
@@ -58,6 +61,11 @@ CartSummary.propTypes = {
     text: PropTypes.string.isRequired
   }),
   totalQty: PropTypes.number,
+  totalWeight: PropTypes.shape({
+    value: PropTypes.number,
+    unit: PropTypes.string,
+    text: PropTypes.string
+  }),
   priceIncludingTax: PropTypes.bool
 };
 
@@ -83,6 +91,11 @@ CartSummary.defaultProps = {
     text: ''
   },
   totalQty: '',
+  totalWeight: {
+    value: 0,
+    unit: 'kg',
+    text: ''
+  },
   priceIncludingTax: false
 };
 
