@@ -1,7 +1,8 @@
 import PropTypes from 'prop-types';
 import React from 'react';
+import { _ } from '@evershop/evershop/src/lib/locale/translate';
 
-function Subtotal({ subTotal }) {
+export function Subtotal({ subTotal }) {
   return (
     <div className="flex justify-between gap-12">
       <div>{_('Sub total')}</div>

@@ -1,0 +1,1 @@
+# Show total weight in cart

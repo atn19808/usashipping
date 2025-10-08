@@ -1,7 +1,7 @@
 import PropTypes from 'prop-types';
 import React from 'react';
 
-function Discount({ discountAmount, coupon }) {
+export function Discount({ discountAmount, coupon }) {
   if (!coupon) {
     return null;
   }

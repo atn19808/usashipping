@@ -87,7 +87,11 @@ Summary.propTypes = {
   checkoutUrl: PropTypes.string.isRequired,
   cart: PropTypes.shape({
     totalQty: PropTypes.number,
-    totalWeight: PropTypes.number,
+    totalWeight: PropTypes.shape({
+      value: PropTypes.number,
+      unit: PropTypes.string,
+      text: PropTypes.string
+    }),
     subTotal: PropTypes.shape({
       value: PropTypes.number,
       text: PropTypes.string
@@ -126,7 +130,11 @@ export const query = `
   query Query {
     cart(id: getContextValue('cartId', null)) {
       totalQty
-      totalWeight
+      totalWeight {
+        value
+        unit
+        text
+      }
       subTotal {
         value
         text
