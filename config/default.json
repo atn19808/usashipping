@@ -36,8 +36,8 @@
         "priority": 60
       },
       {
-        "name": "quaxave_cart_total_in_vnd",
-        "resolve": "extensions/quaxave_cart_total_in_vnd",
+        "name": "quaxave_custom_cart",
+        "resolve": "extensions/quaxave_custom_cart",
         "enabled": true,
         "priority": 70
       }
