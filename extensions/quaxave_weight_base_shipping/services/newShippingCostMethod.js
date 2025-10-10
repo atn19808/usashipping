@@ -77,7 +77,7 @@ module.exports = async function resolver() {
             return toPrice(cost);
         } else if (shippingMethod.weight_based_rate) {
             const totalWeight = this.getData('total_weight');
-            const cost = totalWeight * parseFloat(method.weight_based_rate);
+            const cost = totalWeight * parseFloat(shippingMethod.weight_based_rate);
             return toPrice(cost);
         } else if (shippingMethod.price_based_cost) {
             const subTotal = this.getData('sub_total');
