@@ -22,6 +22,9 @@ const MethodsQuery = `
       updateApi
     }
     createShippingMethodApi: url(routeId: "createShippingMethod")
+    setting {
+      weightUnit
+    }
   }
 `;
 
@@ -118,10 +121,6 @@ function MethodForm({ saveMethodApi, closeModal, getZones, method }) {
     query: MethodsQuery
   });
 
-  // TODO: get weightUnit from setting
-  const weighUnit = 'kg';
-  // const saveMethodApiV2 = saveMethodApi.replace('/shippingZones', '/shippingZones/v2');
-
   const handleCreate = async (inputValue) => {
     setIsLoading(true);
     await fetch(result.data.createShippingMethodApi, {
@@ -149,6 +148,7 @@ function MethodForm({ saveMethodApi, closeModal, getZones, method }) {
   const currentMethod = result.data.shippingMethods.find(
     (m) => m.value === shippingMethod?.value
   );
+  const weightUnit = result.data.setting.weightUnit;
 
   return (
     <Card title="Shipping method">
@@ -280,7 +280,7 @@ function MethodForm({ saveMethodApi, closeModal, getZones, method }) {
             <Field
               name="weight_based_rate"
               type="text"
-              placeholder={`Shipping rate USD/${weighUnit}`}
+              placeholder={`Shipping rate USD/${weightUnit}`}
               validationRules={['notEmpty']}
               value={method?.weightBasedRate?.value || ''}
             />

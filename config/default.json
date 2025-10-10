@@ -1,6 +1,7 @@
 {
   "shop": {
-    "homeUrl": "https://quaxave.com"
+    "homeUrl": "https://quaxave.com",
+    "weightUnit": "lb"
   },
   "system": {
     "theme": "usashipping",
