@@ -17,7 +17,22 @@ const QUERY = `
 export function Total(props) {
   const { total, totalTaxAmount, priceIncludingTax } = props;
 
-  const totalText = total.text;
+  let actualTotal = total;
+  if (priceIncludingTax) {
+    const valueWithTax = actualTotal.value + totalTaxAmount.value;
+    actualTotal = {
+      value: valueWithTax,
+      text: Intl.NumberFormat(
+        'en-US',
+        {
+          style: 'currency',
+          currency: 'USD',
+        }
+      ).format(valueWithTax)
+    }
+  }
+
+  const totalText = actualTotal.text;
   const totalTaxText = totalTaxAmount.text;
 
   const [result] = useQuery({
@@ -34,7 +49,7 @@ export function Total(props) {
     console.error(queryError);
   } else if (!fetching && data !== null && data.fxRate !== null) {
     const rate = data.fxRate.rate;
-    const vndValue = total.value * rate;
+    const vndValue = actualTotal.value * rate;
     // TODO: check what browser compatile with API below
     vndText = Intl.NumberFormat(
       'vn-VN',
@@ -58,7 +73,7 @@ export function Total(props) {
             </div>
             <div>
               <span className="italic">
-                ({_('Inclusive of tax ${totalTaxText}', { totalTaxText })})
+                ({_('Tax ${totalTaxText}', { totalTaxText })})
               </span>
             </div>
           </div>
