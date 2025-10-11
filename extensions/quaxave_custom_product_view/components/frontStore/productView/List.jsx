@@ -7,6 +7,7 @@ import Area from '@components/common/Area';
 import { get } from '@evershop/evershop/src/lib/util/get';
 import { _ } from '@evershop/evershop/src/lib/locale/translate';
 import AddtoCartOrQtyButton from './AddtoCartOrQtyButton';
+import Weight from './Weight';
 
 export default function ProductList({ products = [], countPerRow = 3 }) {
   if (products.length === 0) {
@@ -60,9 +61,15 @@ export default function ProductList({ products = [], countPerRow = 3 }) {
               id: 'price'
             },
             {
+              component: { default: Weight },
+              props: { weight: p.weight },
+              sortOrder: 40,
+              id: 'weight'
+            },
+            {
               component: { default: AddtoCartOrQtyButton },
               props: { product: p },
-              sortOrder: 40,
+              sortOrder: 50,
               id: 'addToCartOrQtyButton'
             }
           ]}
@@ -88,6 +95,9 @@ ProductList.propTypes = {
           value: PropTypes.number,
           text: PropTypes.string
         })
+      }),
+      weight: PropTypes.shape({
+        text: PropTypes.string
       }),
       image: PropTypes.shape({
         alt: PropTypes.string,
