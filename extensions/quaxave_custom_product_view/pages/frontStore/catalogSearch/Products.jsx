@@ -33,6 +33,9 @@ Products.propTypes = {
             text: PropTypes.string
           })
         }),
+        weight: PropTypes.shape({
+          text: PropTypes.string
+        }),
         image: PropTypes.shape({
           alt: PropTypes.string,
           listing: PropTypes.string
@@ -99,6 +102,9 @@ export const fragments = `
         value
         text
       }
+    }
+    weight {
+      text
     }
     image {
       alt

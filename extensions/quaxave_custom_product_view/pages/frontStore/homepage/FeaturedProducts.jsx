@@ -41,6 +41,9 @@ FeaturedProducts.propTypes = {
               text: PropTypes.string.isRequired,
             }).isRequired,
           }).isRequired,
+          weight: PropTypes.shape({
+            text: PropTypes.string
+          }),
           image: PropTypes.shape({
             alt: PropTypes.string.isRequired,
             url: PropTypes.string.isRequired,
@@ -95,7 +98,10 @@ export const query = `
               value
               text
             }
-            }
+          }
+          weight {
+            text
+          }
           image {
             alt
             url: listing
