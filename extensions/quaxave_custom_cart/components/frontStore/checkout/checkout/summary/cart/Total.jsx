@@ -14,6 +14,47 @@ const QUERY = `
   }
 `;
 
+
+function InternalTotal({priceIncludingTax, totalText}) {
+  console.log('totalText', totalText)
+  return priceIncludingTax ?
+    <div className="flex justify-between">
+      <div className="grand-total-value">
+        <span>{_('Total')}</span>
+      </div>
+      <div className="grand-total-value">{totalText}</div>
+    </div> :
+    <div className="flex justify-between">
+      <span className="self-center grand-total-value">{_('Total')}</span>
+    </div>;
+}
+
+function InternalTax({priceIncludingTax, totalTaxText}) {
+  return priceIncludingTax ?
+    <div className="flex justify-between">
+      <div>
+        <span className="italic">
+          ({_('Tax ${totalTaxText}', { totalTaxText })})
+        </span>
+      </div>
+    </div> :
+    null;
+}
+
+function InternalTotalVnd({priceIncludingTax, fetching, vndText}) {
+  return priceIncludingTax ?
+    <div className="flex justify-between">
+      <div>
+        <span>{'Thành tiền'}</span>
+      </div>
+      {(fetching && <div><Spinner width={25} height={25} /> </div>) || <div>{vndText}</div>}
+    </div> :
+    <div className="flex justify-between">
+      <span className="self-center grand-total-value">{_('Total')}</span>
+      {(fetching && <div><Spinner width={25} height={25} /> </div>) || <div>{vndText}</div>}
+    </div>;
+}
+
 export function Total(props) {
   const { total, totalTaxAmount, priceIncludingTax } = props;
 
@@ -61,35 +102,10 @@ export function Total(props) {
   }
 
   return (
-    <div className="summary-row grand-total flex justify-between">
-      {(priceIncludingTax && (
-        <div>
-          <div>
-            <div className="grand-total-value">
-              <span>{_('Total')}</span>
-            </div>
-            <div>
-              <span>{'Thành tiền'}</span>
-            </div>
-            <div>
-              <span className="italic">
-                ({_('Tax ${totalTaxText}', { totalTaxText })})
-              </span>
-            </div>
-          </div>
-        </div>
-      )) || (
-        <div>
-          <span className="self-center grand-total-value">{_('Total')}</span>
-          <span className="self-center">{'Thành tiền'}</span>
-        </div>
-      )}
-      <div>
-        <div>
-          <div className="grand-total-value">{totalText}</div>
-          {(fetching && <Spinner width={25} height={25} />) || <div>{vndText}</div>}
-        </div>
-      </div>
+    <div className="summary-row-custom grand-total">
+      <InternalTotal priceIncludingTax={priceIncludingTax} totalText={totalText} />
+      <InternalTotalVnd priceIncludingTax={priceIncludingTax} fetching={fetching} vndText={vndText} />
+      <InternalTax priceIncludingTax={priceIncludingTax} totalTaxText={totalTaxText} />
     </div>
   );
 }
