@@ -1,15 +1,60 @@
 {
   "shop": {
-    "homeUrl": "https://quaxave.com"
+    "homeUrl": "https://quaxave.com",
+    "weightUnit": "lb"
   },
   "system": {
     "theme": "usashipping",
     "extensions": [
       {
+        "name": "quaxave_custom_login",
+        "resolve": "extensions/quaxave_custom_login",
+        "enabled": true,
+        "priority": 10
+      },
+      {
         "name": "google_login",
         "resolve": "node_modules/@evershop/google_login",
         "enabled": true,
-        "priority": 10
+        "priority": 20
+      },
+      {
+        "name": "quaxave_custom_product_view",
+        "resolve": "extensions/quaxave_custom_product_view",
+        "enabled": true,
+        "priority": 30
+      },
+      {
+        "name": "quaxave_custom_address",
+        "resolve": "extensions/quaxave_custom_address",
+        "enabled": true,
+        "priority": 50
+      },
+      {
+        "name": "quaxave_fetch_pricing",
+        "resolve": "extensions/quaxave_fetch_pricing",
+        "enabled": true,
+        "priority": 60
+      },
+      {
+        "name": "quaxave_weight_base_shipping",
+        "resolve": "extensions/quaxave_weight_base_shipping",
+        "enabled": true,
+        "priority": 70
+      },
+      {
+        "name": "quaxave_custom_cart",
+        "resolve": "extensions/quaxave_custom_cart",
+        "enabled": true,
+        "priority": 90
+      }
+    ],
+    "jobs": [
+      {
+        "name": "fetchRate",
+        "resolve": "@evershop/../../extensions/quaxave_fetch_pricing/jobs/fetchRate.js",
+        "schedule": "0 */12 * * *",
+        "enabled": true
       }
     ]
   },
@@ -29,5 +74,53 @@
       ]
     },
     "copyRight": "© 2025 Qua Xa Ve. All rights reserved."
+  },
+  "customer": {
+    "addressSchema": {
+      "type": "object",
+      "properties": {
+        "sender_full_name": {
+          "type": "string"
+        },
+        "sender_telephone": {
+          "type": ["string", "number"]
+        },
+        "full_name": {
+          "type": "string"
+        },
+        "telephone": {
+          "type": ["string", "number"]
+        },
+        "address_1": {
+            "type": "string"
+        },
+        "address_2": {
+            "type": "string"
+        },
+        "city": {
+            "type": "string"
+        },
+        "province": {
+            "type": "string"
+        },
+        "country": {
+            "type": "string",
+            "pattern": "^[A-Z]{2}$"
+        },
+        "postcode": {
+            "type": ["string", "number"]
+        }
+      },
+      "required": [
+        "full_name",
+        "telephone",
+        "address_1",
+        "city",
+        "country",
+        "province",
+        "postcode"
+      ],
+      "additionalProperties": true
+    }
   }
 }

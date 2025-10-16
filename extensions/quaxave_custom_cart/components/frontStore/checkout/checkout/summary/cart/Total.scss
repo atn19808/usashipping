@@ -1,0 +1,16 @@
+.summary-row-custom {
+  &.grand-total {
+    border-top: 1px solid var(--divider);
+    margin-top: 1rem;
+    padding-top: 1rem;
+    .grand-total-value {
+      font-size: 2rem;
+      font-weight: bold;
+    }
+
+    .grand-total-convert {
+        margin-top: -4rem;
+    }
+  }
+}
+

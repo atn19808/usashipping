@@ -1,0 +1,13 @@
+type FxRate {
+    fxRateId: String
+    uuid: String
+    source: String
+    target: String
+    rate: Float
+    createdAt: DateTime
+    updatedAt: DateTime
+}
+
+extend type Query {
+    fxRate(source: String, target: String): FxRate
+}
