@@ -3,21 +3,6 @@ import PropTypes from 'prop-types';
 import { _ } from '@evershop/evershop/src/lib/locale/translate';
 
 export function Total({ total, totalTaxAmount, priceIncludingTax }) {
-  let actualTotal = total;
-  if (priceIncludingTax) {
-    const valueWithTax = actualTotal.value + totalTaxAmount.value;
-    actualTotal = {
-      value: valueWithTax,
-      text: Intl.NumberFormat(
-        'en-US',
-        {
-          style: 'currency',
-          currency: 'USD',
-        }
-      ).format(valueWithTax)
-    }
-  }
-
   const taxText = totalTaxAmount.text;
   return (
     <div className="summary-row grand-total">
@@ -37,7 +22,7 @@ export function Total({ total, totalTaxAmount, priceIncludingTax }) {
       )) || <span className="self-center font-bold">{_('Total')}</span>}
       <div>
         <div />
-        <div className="grand-total-value">{actualTotal.text}</div>
+        <div className="grand-total-value">{total.text}</div>
       </div>
     </div>
   );
