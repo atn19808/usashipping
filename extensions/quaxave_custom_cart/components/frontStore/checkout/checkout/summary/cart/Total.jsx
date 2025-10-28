@@ -26,6 +26,7 @@ function InternalTotal({priceIncludingTax, totalText}) {
     </div> :
     <div className="flex justify-between">
       <span className="self-center grand-total-value">{_('Total')}</span>
+      <div className="grand-total-value">{totalText}</div>
     </div>;
 }
 
@@ -50,7 +51,7 @@ function InternalTotalVnd({priceIncludingTax, fetching, vndText}) {
       {(fetching && <div><Spinner width={25} height={25} /> </div>) || <div>{vndText}</div>}
     </div> :
     <div className="flex justify-between">
-      <span className="self-center grand-total-value">{_('Total')}</span>
+      <span className="self-center">{'Thành tiền'}</span>
       {(fetching && <div><Spinner width={25} height={25} /> </div>) || <div>{vndText}</div>}
     </div>;
 }
