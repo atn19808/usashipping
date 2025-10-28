@@ -90,7 +90,7 @@ module.exports = async (request, response, deledate, next) => {
       min = max = null;
     }
 
-    console.log('weight_based_rate', weight_based_rate);
+    // console.log('weight_based_rate', weight_based_rate);
     const updateZoneMethod = await update('shipping_zone_method')
       .given({
         cost,

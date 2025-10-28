@@ -5,7 +5,6 @@ import Spinner from '@components/common/Spinner';
 import { useQuery } from 'urql';
 import './Total.scss';
 
-// TODO: currency pair should come from config
 const QUERY = `
   query Query($source: String, $target: String) {
     fxRate(source: $source, target: $target) {
@@ -15,8 +14,7 @@ const QUERY = `
 `;
 
 
-function InternalTotal({priceIncludingTax, totalText}) {
-  console.log('totalText', totalText)
+function InternalTotal({ priceIncludingTax, totalText }) {
   return priceIncludingTax ?
     <div className="flex justify-between">
       <div className="grand-total-value">
@@ -26,6 +24,7 @@ function InternalTotal({priceIncludingTax, totalText}) {
     </div> :
     <div className="flex justify-between">
       <span className="self-center grand-total-value">{_('Total')}</span>
+      <div className="grand-total-value">{totalText}</div>
     </div>;
 }
 
@@ -41,6 +40,7 @@ function InternalTax({priceIncludingTax, totalTaxText}) {
     null;
 }
 
+// TODO: currency pair should come from config
 function InternalTotalVnd({priceIncludingTax, fetching, vndText}) {
   return priceIncludingTax ?
     <div className="flex justify-between">
@@ -50,7 +50,7 @@ function InternalTotalVnd({priceIncludingTax, fetching, vndText}) {
       {(fetching && <div><Spinner width={25} height={25} /> </div>) || <div>{vndText}</div>}
     </div> :
     <div className="flex justify-between">
-      <span className="self-center grand-total-value">{_('Total')}</span>
+      <span className="self-center">{'Thành tiền'}</span>
       {(fetching && <div><Spinner width={25} height={25} /> </div>) || <div>{vndText}</div>}
     </div>;
 }
@@ -58,22 +58,7 @@ function InternalTotalVnd({priceIncludingTax, fetching, vndText}) {
 export function Total(props) {
   const { total, totalTaxAmount, priceIncludingTax } = props;
 
-  let actualTotal = total;
-  if (priceIncludingTax) {
-    const valueWithTax = actualTotal.value + totalTaxAmount.value;
-    actualTotal = {
-      value: valueWithTax,
-      text: Intl.NumberFormat(
-        'en-US',
-        {
-          style: 'currency',
-          currency: 'USD',
-        }
-      ).format(valueWithTax)
-    }
-  }
-
-  const totalText = actualTotal.text;
+  const totalText = total.text;
   const totalTaxText = totalTaxAmount.text;
 
   const [result] = useQuery({
@@ -90,7 +75,7 @@ export function Total(props) {
     console.error(queryError);
   } else if (!fetching && data !== null && data.fxRate !== null) {
     const rate = data.fxRate.rate;
-    const vndValue = actualTotal.value * rate;
+    const vndValue = total.value * rate;
     // TODO: check what browser compatile with API below
     vndText = Intl.NumberFormat(
       'vn-VN',

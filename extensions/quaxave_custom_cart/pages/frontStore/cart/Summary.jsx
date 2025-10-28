@@ -60,7 +60,10 @@ Discount.defaultProps = {
 
 function Summary({
   checkoutUrl,
-  cart: {
+  cart,
+  setting: { priceIncludingTax }
+}) {
+  const {
     totalQty,
     totalWeight,
     subTotal,
@@ -69,9 +72,10 @@ function Summary({
     grandTotal,
     coupon,
     discountAmount
-  },
-  setting: { priceIncludingTax }
-}) {
+  } = cart;
+
+  // console.log('cart', JSON.stringify(cart));
+
   if (totalQty === undefined || totalQty <= 0) {
     return null;
   }

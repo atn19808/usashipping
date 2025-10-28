@@ -3,6 +3,11 @@
     "homeUrl": "https://quaxave.com",
     "weightUnit": "lb"
   },
+  "pricing": {
+    "tax": {
+      "price_including_tax": false
+    }
+  },
   "system": {
     "theme": "usashipping",
     "extensions": [

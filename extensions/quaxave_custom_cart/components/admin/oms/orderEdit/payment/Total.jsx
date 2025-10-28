@@ -2,25 +2,13 @@ import React from 'react';
 import PropTypes from 'prop-types';
 
 export function Total(props) {
-  const { total, tax } = props;
-  console.log('props', props);
-  const valueWithTax = total.value + tax.value;
-  const actualTotal = {
-    value: valueWithTax,
-    text: Intl.NumberFormat(
-      'en-US',
-      {
-        style: 'currency',
-        currency: 'USD',
-      }
-    ).format(valueWithTax)
-  };
+  const { total } = props;
   return (
     <div className="summary-row">
       <span>Total</span>
       <div>
         <span />
-        <div>{actualTotal.text}</div>
+        <div>{total.text}</div>
       </div>
     </div>
   );
