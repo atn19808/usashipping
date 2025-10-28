@@ -3,7 +3,7 @@ import PropTypes from 'prop-types';
 
 export function Total(props) {
   const { total, tax } = props;
-  console.log('props', props);
+  // console.log('props', props);
   const valueWithTax = total.value + tax.value;
   const actualTotal = {
     value: valueWithTax,

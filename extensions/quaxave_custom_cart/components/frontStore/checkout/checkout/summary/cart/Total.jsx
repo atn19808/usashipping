@@ -16,7 +16,7 @@ const QUERY = `
 
 
 function InternalTotal({priceIncludingTax, totalText}) {
-  console.log('totalText', totalText)
+  // console.log('totalText', totalText)
   return priceIncludingTax ?
     <div className="flex justify-between">
       <div className="grand-total-value">
