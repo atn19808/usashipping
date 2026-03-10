@@ -21,16 +21,16 @@ export default function ProductList({ products = [], countPerRow = 3 }) {
   let className;
   switch (countPerRow) {
     case 3:
-      className = 'grid grid-cols-2 md:grid-cols-3 gap-8';
+      className = 'grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4';
       break;
     case 4:
-      className = 'grid grid-cols-2 md:grid-cols-4 gap-8';
+      className = 'grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4';
       break;
     case 5:
-      className = 'grid grid-cols-2 md:grid-cols-5 gap-8';
+      className = 'grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4';
       break;
     default:
-      className = 'grid grid-cols-2 md:grid-cols-3 gap-8';
+      className = 'grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4';
   }
 
   return (
@@ -38,7 +38,7 @@ export default function ProductList({ products = [], countPerRow = 3 }) {
       {products.map((p) => (
         <Area
           id="productListingItem"
-          className="listing-tem"
+          className="listing-item"
           product={p}
           key={p.productId}
           coreComponents={[

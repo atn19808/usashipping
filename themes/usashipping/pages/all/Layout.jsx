@@ -10,21 +10,13 @@ export default function Layout() {
     <>
       <LoadingBar />
       <div className="header">
-        <div className="page-width flex justify-between">
-          <Area
-            id="header"
-            noOuter
-            coreComponents={[
-              {
-                component: { default: Area },
-                props: {
-                  id: "icon-wrapper",
-                  className: "icon-wrapper flex justify-between space-x-1",
-                },
-                sortOrder: 20,
-              },
-            ]}
-          />
+        <div className="page-width header-inner">
+          {/* Left: Logo */}
+          <Area id="header" noOuter />
+          {/* Center: persistent search bar (hidden on mobile) */}
+          <Area id="header-search" noOuter />
+          {/* Right: Sign In + Cart (with mobile search toggle) */}
+          <Area id="header-actions" noOuter />
         </div>
       </div>
       <main className="content">

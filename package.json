@@ -10,7 +10,8 @@
     "admin:change-pass": "evershop user:changePassword",
     "user:create": "evershop user:create",
     "user:changePassword": "evershop user:changePassword",
-    "evershop": "evershop"
+    "evershop": "evershop",
+    "postinstall": "patch-package"
   },
   "workspaces": [
     "extensions/*"
@@ -20,5 +21,8 @@
   "dependencies": {
     "@evershop/evershop": "1.2.2",
     "@evershop/google_login": "^1.2.1"
+  },
+  "devDependencies": {
+    "patch-package": "^8.0.1"
   }
 }

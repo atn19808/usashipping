@@ -1,0 +1,21 @@
+diff --git a/node_modules/config/lib/config.js b/node_modules/config/lib/config.js
+index b00ab67..3463e43 100644
+--- a/node_modules/config/lib/config.js
++++ b/node_modules/config/lib/config.js
+@@ -1003,12 +1003,12 @@ util.cloneDeep = function cloneDeep(parent, depth, circular, prototype) {
+       return parent;
+     }
+ 
+-    if (Utils.isArray(parent)) {
++    if (Array.isArray(parent)) {
+       child = [];
+-    } else if (Utils.isRegExp(parent)) {
+-      child = new RegExp(parent.source, util.getRegExpFlags(parent));
++    } else if (parent instanceof RegExp) {
++      child = new RegExp(parent.source, parent.flags);
+       if (parent.lastIndex) child.lastIndex = parent.lastIndex;
+-    } else if (Utils.isDate(parent)) {
++    } else if (parent instanceof Date) {
+       child = new Date(parent.getTime());
+     } else if (useBuffer && Buffer.isBuffer(parent)) {
+       child = Buffer.alloc(parent.length);

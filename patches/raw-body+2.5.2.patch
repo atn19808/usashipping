@@ -1,0 +1,19 @@
+diff --git a/node_modules/raw-body/index.js b/node_modules/raw-body/index.js
+index 9cdcd12..c75b967 100644
+--- a/node_modules/raw-body/index.js
++++ b/node_modules/raw-body/index.js
+@@ -181,10 +181,10 @@ function readStream (stream, encoding, length, limit, callback) {
+     }))
+   }
+ 
+-  if (typeof stream.readable !== 'undefined' && !stream.readable) {
+-    return done(createError(500, 'stream is not readable', {
+-      type: 'stream.not.readable'
+-    }))
++  if (typeof stream.readable !== 'undefined' && !stream.readable && stream.destroyed) {
++    // Node 22+: GET/HEAD requests have no body — stream destroyed immediately.
++    // Return empty buffer so body-parser sees an empty body rather than erroring.
++    return done(null, Buffer.alloc(0))
+   }
+ 
+   var received = 0
