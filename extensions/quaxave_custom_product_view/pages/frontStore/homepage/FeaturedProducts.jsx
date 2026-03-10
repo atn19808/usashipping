@@ -1,58 +1,123 @@
-import React from "react";
-import PropTypes from "prop-types";
-import { _ } from "@evershop/evershop/src/lib/locale/translate";
+import React, { useState } from 'react';
+import PropTypes from 'prop-types';
+import { useQuery } from 'urql';
 import ProductList from '../../../components/frontStore/productView/List';
 import mapProductWithCart from '../../../components/common/ProductUtil';
 
-export default function FeaturedProducts({ collection, cart }) {
-  const { products: { items } } = collection;
-  if (!collection) {
-    return null;
-  }
+// ── Store config — add new stores here as you onboard them ──────────────────
+// `urlKey` must match the category url_key in the admin panel
+// `url`    is the "View all" category link
+const STORES = [
+  { urlKey: 'costco',  label: 'Costco',  url: '/costco'  },
+  { urlKey: 'walmart', label: 'Walmart', url: '/walmart' },
+];
 
-  const productsWithCartInfo = mapProductWithCart(items, cart);
+const PRODUCT_FIELDS = `
+  uuid
+  productId
+  name
+  sku
+  price {
+    regular { value text }
+    special { value text }
+  }
+  weight { text }
+  image { alt url: listing }
+  url
+  inventory { isInStock stockAvailability manageStock }
+`;
+
+const STORE_QUERY = `
+  query StoreProducts($urlKey: String!) {
+    categoryByUrlKey(urlKey: $urlKey) {
+      products(filters: [{key: "limit", operation: eq, value: "20"}]) {
+        items { ${PRODUCT_FIELDS} }
+      }
+    }
+    cart {
+      items { uuid productId qty }
+    }
+  }
+`;
+
+function SkeletonGrid() {
+  return (
+    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+      {Array(8).fill(0).map((_, i) => (
+        <div key={i} className="skeleton-card" />
+      ))}
+    </div>
+  );
+}
+
+export default function FeaturedProducts({ category, cart: ssrCart }) {
+  const [activeStore, setActiveStore] = useState(STORES[0].urlKey);
+
+  // Client-side fetch — fires on tab switch (and on mount to keep cart fresh)
+  const [{ data, fetching }] = useQuery({
+    query: STORE_QUERY,
+    variables: { urlKey: activeStore },
+  });
+
+  // Prefer live URQL data; fall back to SSR props only for the initial store
+  const items =
+    data?.categoryByUrlKey?.products?.items ??
+    (activeStore === STORES[0].urlKey ? category?.products?.items ?? [] : []);
+  const cart = data?.cart ?? ssrCart;
+  const products = mapProductWithCart(items, cart);
+
+  const activeStoreMeta = STORES.find((s) => s.urlKey === activeStore);
 
   return (
-    <div className="pt-3">
-      <div className="page-width">
-        <h2 className="mt-3 mb-3 text-center uppercase  tracking-widest">
-          {collection.name}
-        </h2>
-        <ProductList products={productsWithCartInfo} countPerRow={3} />
+    <div className="store-tabs-section">
+
+      {/* ── Store tab bar ─────────────────────────────────────── */}
+      <div className="store-tabs-bar">
+        <div className="page-width store-tabs-inner">
+          <nav className="store-tabs" role="tablist">
+            {STORES.map((store) => (
+              <button
+                key={store.urlKey}
+                role="tab"
+                aria-selected={activeStore === store.urlKey}
+                className={`store-tab${activeStore === store.urlKey ? ' active' : ''}`}
+                onClick={() => setActiveStore(store.urlKey)}
+              >
+                {store.label}
+              </button>
+            ))}
+          </nav>
+          {activeStoreMeta && (
+            <a href={activeStoreMeta.url} className="view-all-link">
+              Xem tất cả →
+            </a>
+          )}
+        </div>
       </div>
+
+      {/* ── Product grid ──────────────────────────────────────── */}
+      <div className="page-width" style={{ paddingTop: '16px', paddingBottom: '32px' }}>
+        {fetching ? (
+          <SkeletonGrid />
+        ) : products.length === 0 ? (
+          <p className="text-center" style={{ fontSize: '1.4rem', color: 'var(--color-text-muted)', padding: '40px 0' }}>
+            Chưa có sản phẩm trong mục này.
+          </p>
+        ) : (
+          <ProductList products={products} countPerRow={4} />
+        )}
+      </div>
+
     </div>
   );
 }
 
 FeaturedProducts.propTypes = {
-  collection: PropTypes.shape({
+  category: PropTypes.shape({
     products: PropTypes.shape({
-      items: PropTypes.arrayOf(
-        PropTypes.shape({
-          productId: PropTypes.number.isRequired,
-          name: PropTypes.string.isRequired,
-          price: PropTypes.shape({
-            regular: PropTypes.shape({
-              value: PropTypes.number.isRequired,
-              text: PropTypes.string.isRequired,
-            }).isRequired,
-            special: PropTypes.shape({
-              value: PropTypes.number.isRequired,
-              text: PropTypes.string.isRequired,
-            }).isRequired,
-          }).isRequired,
-          weight: PropTypes.shape({
-            text: PropTypes.string
-          }),
-          image: PropTypes.shape({
-            alt: PropTypes.string.isRequired,
-            url: PropTypes.string.isRequired,
-          }),
-          url: PropTypes.string.isRequired,
-        })
-      ).isRequired,
-    }).isRequired,
-  }).isRequired,
+      items: PropTypes.array,
+    }),
+  }),
   cart: PropTypes.shape({
     items: PropTypes.arrayOf(
       PropTypes.shape({
@@ -60,67 +125,43 @@ FeaturedProducts.propTypes = {
         qty: PropTypes.number,
         uuid: PropTypes.string,
       })
-    )
-  })
+    ),
+  }),
 };
 
 FeaturedProducts.defaultProps = {
-  collection: {
-    products: {
-      items: []
-    }
-  },
-  cart: {
-    items: []
-  }
+  category: { products: { items: [] } },
+  cart: { items: [] },
 };
 
 export const layout = {
-  areaId: "content",
+  areaId: 'content',
   sortOrder: 15,
 };
 
+// SSR: pre-load the first store (Costco) so the page isn't blank on first paint
 export const query = `
   query query {
-    collection (code: "homepage") {
-      products (filters: [{key: "limit", operation: eq, value: "6"}]) {
+    category: categoryByUrlKey(urlKey: "costco") {
+      products(filters: [{key: "limit", operation: eq, value: "20"}]) {
         items {
           uuid
           productId
           name
           sku
           price {
-            regular {
-              value
-              text
-            }
-            special {
-              value
-              text
-            }
+            regular { value text }
+            special { value text }
           }
-          weight {
-            text
-          }
-          image {
-            alt
-            url: listing
-          }
+          weight { text }
+          image { alt url: listing }
           url
-          inventory {
-            isInStock
-            stockAvailability
-            manageStock
-          }
+          inventory { isInStock stockAvailability manageStock }
         }
       }
     }
     cart {
-      items {
-        uuid
-        productId
-        qty
-      }
+      items { uuid productId qty }
     }
   }
 `;

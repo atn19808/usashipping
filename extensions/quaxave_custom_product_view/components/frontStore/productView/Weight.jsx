@@ -4,7 +4,7 @@ import PropTypes from 'prop-types';
 export default function Weight(props) {
     const { weight } = props;
     return (
-        <p>{weight.text}</p>
+        <p className="product-weight">{weight.text}</p>
     );
 }
 

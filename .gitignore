@@ -12,6 +12,9 @@ node_modules
 ./dist
 .evershop
 
+# uploads
+media/
+
 # evershop folder
 #/extensions/*
 #themes
@@ -23,4 +26,4 @@ node_modules
 #.idea/*
 #.vscode
 
-.direnv/
+.direnv/config/local.json

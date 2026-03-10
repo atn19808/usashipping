@@ -47,6 +47,12 @@
         "resolve": "extensions/quaxave_custom_cart",
         "enabled": true,
         "priority": 90
+      },
+      {
+        "name": "quaxave_product_importer",
+        "resolve": "extensions/quaxave_product_importer",
+        "enabled": true,
+        "priority": 100
       }
     ],
     "jobs": [

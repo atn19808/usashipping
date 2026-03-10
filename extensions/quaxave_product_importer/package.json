@@ -1,0 +1,5 @@
+{
+  "name": "quaxave_product_importer",
+  "version": "1.0.0",
+  "description": "Import products from Costco via Puppeteer scraping"
+}

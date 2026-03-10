@@ -3,11 +3,12 @@ import PropTypes from 'prop-types';
 
 function Footer({ themeConfig: { copyRight } }) {
     return (
-        <div className="page-width grid grid-cols-1 md:grid-cols-1 justify-between">
-            <div className="self-center">
-                <div className="copyright text-center text-textSubdued">
-                    <span>{copyRight}</span>
-                </div>
+        <div className="page-width footer-bar">
+            <nav className="footer-nav">
+                <a href="/page/about-us">About Us</a>
+            </nav>
+            <div className="copyright text-textSubdued">
+                <span>{copyRight}</span>
             </div>
         </div>
     );
