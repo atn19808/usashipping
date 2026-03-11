@@ -60,7 +60,7 @@ Discount.defaultProps = {
 
 function Summary({
   checkoutUrl,
-  weightBasedShippingRate,
+
   cart: {
     totalQty,
     totalWeight,
@@ -115,8 +115,7 @@ function Summary({
                 default: TotalWeight
               },
               props: {
-                totalWeight: totalWeight,
-                costPerLb: weightBasedShippingRate
+                totalWeight: totalWeight
               },
               sortOrder: 40,
               id: 'shoppingCartTotalWeight'
@@ -130,9 +129,7 @@ function Summary({
                 total: grandTotal,
                 totalTaxAmount: totalTaxAmount,
                 priceIncludingTax,
-                shippingCost: (totalWeight?.value != null && weightBasedShippingRate != null)
-                  ? totalWeight.value * weightBasedShippingRate
-                  : 0
+                totalWeight: totalWeight
               },
               sortOrder: 60,
               id: 'shoppingCartTotalPrice'
@@ -149,7 +146,6 @@ function Summary({
 
 Summary.propTypes = {
   checkoutUrl: PropTypes.string.isRequired,
-  weightBasedShippingRate: PropTypes.number,
   cart: PropTypes.shape({
     totalQty: PropTypes.number,
     totalWeight: PropTypes.shape({
@@ -227,6 +223,5 @@ export const query = `
       priceIncludingTax
     }
     checkoutUrl: url(routeId: "checkout")
-    weightBasedShippingRate
   }
 `;

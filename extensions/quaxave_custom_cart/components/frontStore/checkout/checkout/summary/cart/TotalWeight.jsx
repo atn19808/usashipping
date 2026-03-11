@@ -1,8 +1,18 @@
 import PropTypes from 'prop-types';
-import React from "react";
+import React from 'react';
 import { _ } from '@evershop/evershop/src/lib/locale/translate';
+import { useQuery } from 'urql';
 
-export default function TotalWeight({ totalWeight, costPerLb }) {
+const RATE_QUERY = `
+  query {
+    weightBasedShippingRate
+  }
+`;
+
+export default function TotalWeight({ totalWeight }) {
+  const [{ data }] = useQuery({ query: RATE_QUERY });
+  const costPerLb = data?.weightBasedShippingRate ?? null;
+
   if (costPerLb != null && totalWeight?.value != null) {
     const shippingCost = totalWeight.value * costPerLb;
     const costText = `$${shippingCost.toFixed(2)}`;
@@ -27,8 +37,7 @@ TotalWeight.propTypes = {
     value: PropTypes.number,
     unit: PropTypes.string,
     text: PropTypes.string
-  }),
-  costPerLb: PropTypes.number
+  })
 };
 
 TotalWeight.defaultProps = {
@@ -36,6 +45,5 @@ TotalWeight.defaultProps = {
     value: 0,
     unit: 'lb',
     text: ''
-  },
-  costPerLb: null
+  }
 };

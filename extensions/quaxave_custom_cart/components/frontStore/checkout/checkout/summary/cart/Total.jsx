@@ -5,8 +5,7 @@ import Spinner from '@components/common/Spinner';
 import { useQuery } from 'urql';
 import './Total.scss';
 
-// TODO: currency pair should come from config
-const QUERY = `
+const FX_QUERY = `
   query Query($source: String, $target: String) {
     fxRate(source: $source, target: $target) {
       rate
@@ -14,24 +13,33 @@ const QUERY = `
   }
 `;
 
+const RATE_QUERY = `
+  query {
+    weightBasedShippingRate
+  }
+`;
+
 export function Total(props) {
-  const { total, totalTaxAmount, priceIncludingTax, shippingCost } = props;
+  const { total, totalTaxAmount, priceIncludingTax, totalWeight } = props;
+
+  const [rateResult] = useQuery({ query: RATE_QUERY });
+  const costPerLb = rateResult.data?.weightBasedShippingRate ?? null;
+  const shippingCost = (costPerLb != null && totalWeight?.value != null)
+    ? totalWeight.value * costPerLb
+    : 0;
 
   let baseValue = total.value;
   if (priceIncludingTax) {
     baseValue += totalTaxAmount.value;
   }
-  const grandValue = baseValue + (shippingCost || 0);
+  const grandValue = baseValue + shippingCost;
   const totalText = Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(grandValue);
 
-  const [result] = useQuery({
-    query: QUERY,
-    variables: {
-      source: "usd",
-      target: "vnd"
-    }
+  const [fxResult] = useQuery({
+    query: FX_QUERY,
+    variables: { source: 'usd', target: 'vnd' }
   });
-  const { data, fetching, error: queryError } = result;
+  const { data, fetching, error: queryError } = fxResult;
 
   let vndText = '⚠️';
   if (queryError) {
@@ -39,13 +47,7 @@ export function Total(props) {
   } else if (!fetching && data !== null && data.fxRate !== null) {
     const rate = data.fxRate.rate;
     const vndValue = grandValue * rate;
-    vndText = Intl.NumberFormat(
-      'vn-VN',
-      {
-        style: 'currency',
-        currency: 'VND',
-      }
-    ).format(vndValue);
+    vndText = Intl.NumberFormat('vn-VN', { style: 'currency', currency: 'VND' }).format(vndValue);
   }
 
   return (
@@ -74,12 +76,12 @@ Total.propTypes = {
     text: PropTypes.string
   }).isRequired,
   priceIncludingTax: PropTypes.bool,
-  shippingCost: PropTypes.number,
-  fxRate: PropTypes.shape({
-    rate: PropTypes.number.isRequired
+  totalWeight: PropTypes.shape({
+    value: PropTypes.number
   })
 };
 
 Total.defaultProps = {
-  priceIncludingTax: false
+  priceIncludingTax: false,
+  totalWeight: null
 };
