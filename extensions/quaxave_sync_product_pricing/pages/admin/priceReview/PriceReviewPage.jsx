@@ -3,10 +3,11 @@ import { toast } from 'react-toastify';
 import PageHeading from '@components/admin/cms/PageHeading';
 import { Card } from '@components/admin/cms/Card';
 
-export default function PriceReviewPage({ pendingPriceChanges, approveUrl, dismissUrl }) {
+export default function PriceReviewPage({ pendingPriceChanges, approveUrl, dismissUrl, triggerUrl }) {
   const [items, setItems] = useState(pendingPriceChanges || []);
   const [selected, setSelected] = useState(new Set());
   const [loading, setLoading] = useState(false);
+  const [scraping, setScraping] = useState(false);
 
   const toggleSelect = (id) => {
     setSelected((prev) => {
@@ -48,6 +49,20 @@ export default function PriceReviewPage({ pendingPriceChanges, approveUrl, dismi
     }
   };
 
+  const handleTrigger = async () => {
+    setScraping(true);
+    try {
+      const res = await fetch(triggerUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' } });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json?.error?.message || 'Request failed');
+      toast.info('Scrape job started — results will appear here in ~6 minutes. Refresh the page when done.');
+    } catch (err) {
+      toast.error('Failed to start scrape: ' + err.message);
+    } finally {
+      setScraping(false);
+    }
+  };
+
   const handleApprove = async (ids) => {
     try {
       const result = await postAction(approveUrl, ids);
@@ -79,6 +94,11 @@ export default function PriceReviewPage({ pendingPriceChanges, approveUrl, dismi
 
   return (
     <div className="main-content-inner">
+      <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '1rem' }}>
+        <button className="button secondary" disabled={scraping} onClick={handleTrigger}>
+          {scraping ? 'Starting...' : 'Run Now'}
+        </button>
+      </div>
       <PageHeading backUrl="/admin/products" heading="Price Review" />
 
       {items.length === 0 ? (
@@ -251,5 +271,6 @@ export const query = `
     }
     approveUrl: url(routeId: "approvePriceChange")
     dismissUrl: url(routeId: "dismissPriceChange")
+    triggerUrl: url(routeId: "triggerPriceScrape")
   }
 `;
