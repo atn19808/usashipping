@@ -6,7 +6,7 @@ import { _ } from '@evershop/evershop/src/lib/locale/translate';
 import ProductNoThumbnail from '@components/common/ProductNoThumbnail';
 import { ItemOptions } from '@evershop/evershop/src/components/frontStore/checkout/cart/items/ItemOptions';
 import { ItemVariantOptions } from '@evershop/evershop/src/components/frontStore/checkout/cart/items/ItemVariantOptions';
-import Quantity from '@evershop/evershop/src/components/frontStore/checkout/cart/items/Quantity';
+import CartQuantity from './CartQuantity';
 import './Items.scss';
 
 function Items({ items, setting: { priceIncludingTax } }) {
@@ -132,7 +132,7 @@ function Items({ items, setting: { priceIncludingTax } }) {
                   </span>
                 </div>
                 <div className="md:hidden mt-2 flex justify-end">
-                  <Quantity qty={item.qty} api={item.updateQtyApi} />
+                  <CartQuantity qty={item.qty} api={item.updateQtyApi} sku={item.productSku} />
                 </div>
               </td>
               <td className="hidden md:table-cell">
@@ -143,7 +143,7 @@ function Items({ items, setting: { priceIncludingTax } }) {
                 </div>
               </td>
               <td className="hidden md:table-cell">
-                <Quantity qty={item.qty} api={item.updateQtyApi} />
+                <CartQuantity qty={item.qty} api={item.updateQtyApi} sku={item.productSku} />
               </td>
               <td className="hidden md:table-cell">
                 <span>
