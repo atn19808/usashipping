@@ -96,12 +96,14 @@ export function waitForSync() {
   return _syncPromise || Promise.resolve();
 }
 
-/** Navigate immediately — never blocks. Sync runs in background. */
-export function syncAndNavigate(destUrl) {
+/** Await sync, clear localStorage, then navigate — cart page renders correct state in one load. */
+export async function syncAndNavigate(destUrl) {
   const items = load();
   if (items.length && !_isSynced(items)) {
     if (_debounceTimer) { clearTimeout(_debounceTimer); _debounceTimer = null; }
     if (!_syncPromise) _syncPromise = _doSync(items).finally(() => { _syncPromise = null; });
+    await _syncPromise;
   }
+  clearCart();
   window.location.href = destUrl;
 }
