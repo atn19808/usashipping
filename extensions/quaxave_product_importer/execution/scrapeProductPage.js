@@ -28,6 +28,8 @@ async function scrapeProductPage(url) {
       args: [
         '--no-sandbox',
         '--disable-setuid-sandbox',
+        '--disable-dev-shm-usage',
+        '--disable-gpu',
         '--disable-blink-features=AutomationControlled',
         '--disable-infobars',
         '--window-size=1366,768',
@@ -48,7 +50,7 @@ async function scrapeProductPage(url) {
       Object.defineProperty(navigator, 'languages', { get: () => ['en-US', 'en'] });
     });
 
-    await page.goto(url, { waitUntil: 'networkidle2', timeout: NAVIGATION_TIMEOUT });
+    await page.goto(url, { waitUntil: 'domcontentloaded', timeout: NAVIGATION_TIMEOUT });
 
     // Dismiss OneTrust cookie banner if present
     try {
