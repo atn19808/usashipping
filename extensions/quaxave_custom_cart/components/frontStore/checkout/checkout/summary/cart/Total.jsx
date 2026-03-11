@@ -14,67 +14,15 @@ const QUERY = `
   }
 `;
 
-
-function InternalTotal({priceIncludingTax, totalText}) {
-  console.log('totalText', totalText)
-  return priceIncludingTax ?
-    <div className="flex justify-between">
-      <div className="grand-total-value">
-        <span>{_('Total')}</span>
-      </div>
-      <div className="grand-total-value">{totalText}</div>
-    </div> :
-    <div className="flex justify-between">
-      <span className="self-center grand-total-value">{_('Total')}</span>
-    </div>;
-}
-
-function InternalTax({priceIncludingTax, totalTaxText}) {
-  return priceIncludingTax ?
-    <div className="flex justify-between">
-      <div>
-        <span className="italic">
-          ({_('Tax ${totalTaxText}', { totalTaxText })})
-        </span>
-      </div>
-    </div> :
-    null;
-}
-
-function InternalTotalVnd({priceIncludingTax, fetching, vndText}) {
-  return priceIncludingTax ?
-    <div className="flex justify-between">
-      <div>
-        <span>{'Thành tiền'}</span>
-      </div>
-      {(fetching && <div><Spinner width={25} height={25} /> </div>) || <div>{vndText}</div>}
-    </div> :
-    <div className="flex justify-between">
-      <span className="self-center grand-total-value">{_('Total')}</span>
-      {(fetching && <div><Spinner width={25} height={25} /> </div>) || <div>{vndText}</div>}
-    </div>;
-}
-
 export function Total(props) {
-  const { total, totalTaxAmount, priceIncludingTax } = props;
+  const { total, totalTaxAmount, priceIncludingTax, shippingCost } = props;
 
-  let actualTotal = total;
+  let baseValue = total.value;
   if (priceIncludingTax) {
-    const valueWithTax = actualTotal.value + totalTaxAmount.value;
-    actualTotal = {
-      value: valueWithTax,
-      text: Intl.NumberFormat(
-        'en-US',
-        {
-          style: 'currency',
-          currency: 'USD',
-        }
-      ).format(valueWithTax)
-    }
+    baseValue += totalTaxAmount.value;
   }
-
-  const totalText = actualTotal.text;
-  const totalTaxText = totalTaxAmount.text;
+  const grandValue = baseValue + (shippingCost || 0);
+  const totalText = Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(grandValue);
 
   const [result] = useQuery({
     query: QUERY,
@@ -90,8 +38,7 @@ export function Total(props) {
     console.error(queryError);
   } else if (!fetching && data !== null && data.fxRate !== null) {
     const rate = data.fxRate.rate;
-    const vndValue = actualTotal.value * rate;
-    // TODO: check what browser compatile with API below
+    const vndValue = grandValue * rate;
     vndText = Intl.NumberFormat(
       'vn-VN',
       {
@@ -103,9 +50,16 @@ export function Total(props) {
 
   return (
     <div className="summary-row-custom grand-total">
-      <InternalTotal priceIncludingTax={priceIncludingTax} totalText={totalText} />
-      <InternalTotalVnd priceIncludingTax={priceIncludingTax} fetching={fetching} vndText={vndText} />
-      <InternalTax priceIncludingTax={priceIncludingTax} totalTaxText={totalTaxText} />
+      <div className="flex justify-between">
+        <div className="grand-total-value">
+          <span>{_('Total')}</span>
+        </div>
+        <div className="grand-total-value">{totalText}</div>
+      </div>
+      <div className="flex justify-between">
+        <div><span>{'Thành tiền'}</span></div>
+        {(fetching && <div><Spinner width={25} height={25} /></div>) || <div>{vndText}</div>}
+      </div>
     </div>
   );
 }
@@ -120,6 +74,7 @@ Total.propTypes = {
     text: PropTypes.string
   }).isRequired,
   priceIncludingTax: PropTypes.bool,
+  shippingCost: PropTypes.number,
   fxRate: PropTypes.shape({
     rate: PropTypes.number.isRequired
   })

@@ -64,12 +64,14 @@ export default function HeaderActions({
     }
   };
 
+  const cartPath = (() => { try { return new URL(cartUrl).pathname; } catch { return cartUrl; } })();
+
   const handleCartClick = async (e) => {
     e.preventDefault();
     if (syncing) return;
-    if (totalQty === 0) { window.location.href = cartUrl; return; }
+    if (totalQty === 0) { window.location.href = cartPath; return; }
     setSyncing(true);
-    await syncAndNavigate(cartUrl);
+    await syncAndNavigate(cartPath);
     setSyncing(false);
   };
 
@@ -113,7 +115,7 @@ export default function HeaderActions({
       </a>
 
       <a
-        href={cartUrl}
+        href={cartPath}
         className={`hdr-action-btn hdr-cart-btn${syncing ? ' hdr-cart-syncing' : ''}`}
         onClick={handleCartClick}
       >

@@ -60,6 +60,7 @@ Discount.defaultProps = {
 
 function Summary({
   checkoutUrl,
+  weightBasedShippingRate,
   cart: {
     totalQty,
     totalWeight,
@@ -99,9 +100,8 @@ function Summary({
               id: 'shoppingCartDiscount'
             },
             {
-              // eslint-disable-next-line react/no-unstable-nested-components
               component: {
-                default: priceIncludingTax ? () => null : Tax
+                default: Tax
               },
               props: {
                 amount: totalTaxAmount.text
@@ -115,7 +115,8 @@ function Summary({
                 default: TotalWeight
               },
               props: {
-                totalWeight: totalWeight
+                totalWeight: totalWeight,
+                costPerLb: weightBasedShippingRate
               },
               sortOrder: 40,
               id: 'shoppingCartTotalWeight'
@@ -128,7 +129,10 @@ function Summary({
               props: {
                 total: grandTotal,
                 totalTaxAmount: totalTaxAmount,
-                priceIncludingTax
+                priceIncludingTax,
+                shippingCost: (totalWeight?.value != null && weightBasedShippingRate != null)
+                  ? totalWeight.value * weightBasedShippingRate
+                  : 0
               },
               sortOrder: 60,
               id: 'shoppingCartTotalPrice'
@@ -145,6 +149,7 @@ function Summary({
 
 Summary.propTypes = {
   checkoutUrl: PropTypes.string.isRequired,
+  weightBasedShippingRate: PropTypes.number,
   cart: PropTypes.shape({
     totalQty: PropTypes.number,
     totalWeight: PropTypes.shape({
@@ -222,5 +227,6 @@ export const query = `
       priceIncludingTax
     }
     checkoutUrl: url(routeId: "checkout")
+    weightBasedShippingRate
   }
 `;
