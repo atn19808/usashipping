@@ -15,7 +15,9 @@
  * }>}
  */
 
-const puppeteer = require('puppeteer');
+const puppeteer = require('puppeteer-extra');
+const StealthPlugin = require('puppeteer-extra-plugin-stealth');
+puppeteer.use(StealthPlugin());
 
 const NAVIGATION_TIMEOUT = 45000;
 const IDLE_WAIT_MS = 3000;
@@ -24,14 +26,12 @@ async function scrapeProductPage(url) {
   let browser;
   try {
     browser = await puppeteer.launch({
-      headless: 'new',
+      headless: true,
       args: [
         '--no-sandbox',
         '--disable-setuid-sandbox',
         '--disable-dev-shm-usage',
         '--disable-gpu',
-        '--disable-blink-features=AutomationControlled',
-        '--disable-infobars',
         '--window-size=1366,768',
         `--user-data-dir=${require('os').tmpdir()}/costco-scraper-profile`
       ]
@@ -43,12 +43,6 @@ async function scrapeProductPage(url) {
       'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 ' +
       '(KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36'
     );
-
-    await page.evaluateOnNewDocument(() => {
-      Object.defineProperty(navigator, 'webdriver', { get: () => undefined });
-      Object.defineProperty(navigator, 'plugins', { get: () => [1, 2, 3] });
-      Object.defineProperty(navigator, 'languages', { get: () => ['en-US', 'en'] });
-    });
 
     await page.goto(url, { waitUntil: 'domcontentloaded', timeout: NAVIGATION_TIMEOUT });
 
