@@ -53,6 +53,12 @@
         "resolve": "extensions/quaxave_product_importer",
         "enabled": true,
         "priority": 100
+      },
+      {
+        "name": "quaxave_sync_product_pricing",
+        "resolve": "extensions/quaxave_sync_product_pricing",
+        "enabled": true,
+        "priority": 110
       }
     ],
     "jobs": [
@@ -60,6 +66,12 @@
         "name": "fetchRate",
         "resolve": "@evershop/../../extensions/quaxave_fetch_pricing/jobs/fetchRate.js",
         "schedule": "0 */12 * * *",
+        "enabled": true
+      },
+      {
+        "name": "scrapeAndStagePrices",
+        "resolve": "@evershop/../../extensions/quaxave_sync_product_pricing/jobs/scrapeAndStagePrices.js",
+        "schedule": "0 2 * * *",
         "enabled": true
       }
     ]

@@ -1,0 +1,5 @@
+{
+  "name": "quaxave_sync_product_pricing",
+  "version": "1.0.0",
+  "description": "Scrapes Costco/Walmart prices on a schedule and stages pending price changes for admin review"
+}

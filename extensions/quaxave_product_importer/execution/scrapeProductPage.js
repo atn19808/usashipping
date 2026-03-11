@@ -31,7 +31,7 @@ async function scrapeProductPage(url) {
         '--disable-blink-features=AutomationControlled',
         '--disable-infobars',
         '--window-size=1366,768',
-        '--user-data-dir=/tmp/costco-scraper-profile'
+        `--user-data-dir=${require('os').tmpdir()}/costco-scraper-profile`
       ]
     });
 

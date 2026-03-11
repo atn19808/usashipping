@@ -27,3 +27,7 @@ media/
 #.vscode
 
 .direnv/config/local.json
+
+# service account keys and other secrets in config/
+config/*.json
+!config/default.json
