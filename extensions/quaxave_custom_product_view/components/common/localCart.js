@@ -3,10 +3,9 @@
  *
  * Flow:
  *  1. Add/remove on product pages → instant localStorage update + CustomEvent
- *  2. Cart page load → CartSync writes server cart to localStorage (reverse sync)
- *     and caches removeApi URLs for each server item.
- *  3. Cart click → syncAndNavigate: deletes server items (using cached removeApis),
- *     POSTs fresh items from localStorage, then navigates.
+ *  2. Cart click → syncAndNavigate: diff-syncs server cart to match localStorage
+ *     (DELETE removed, POST new, PATCH qty changes), then navigates.
+ *  3. Cart page load → CartSync writes server cart back to localStorage so badge stays in sync.
  */
 import { useState, useEffect } from 'react';
 
@@ -31,10 +30,6 @@ export function cacheServerState(serverState) {
   localStorage.setItem(SERVER_STATE_KEY, JSON.stringify(serverState));
 }
 
-function loadServerState() {
-  try { return JSON.parse(localStorage.getItem(SERVER_STATE_KEY)) || []; }
-  catch { return []; }
-}
 
 export function getCart() { return load(); }
 export function getItemQty(sku) { return load().find(i => i.sku === sku)?.qty ?? 0; }
@@ -67,34 +62,73 @@ export function useLocalCart() {
   return cart;
 }
 
+/** Fetch current server cart items via session-authenticated REST endpoint. */
+async function fetchServerCartItems() {
+  try {
+    const res = await fetch('/api/cart/mine/items', {
+      method: 'GET',
+      credentials: 'same-origin',
+    });
+    const json = await res.json();
+    return json?.data?.items ?? [];
+  } catch {
+    return null;
+  }
+}
+
 /**
- * Reset server cart to exactly match localStorage, then navigate.
- * Uses cached removeApis (written by CartSync on the last cart page visit)
- * to delete existing server items before POSTing fresh ones.
+ * Diff-sync: bring the server cart into exact alignment with localStorage,
+ * then navigate. Idempotent — running it twice is a no-op.
+ *
+ * Strategy (no blind delete-all + re-add):
+ *  - Items only in localStorage → POST (add)
+ *  - Items only on server → DELETE (remove)
+ *  - Items in both with same qty → skip
+ *  - Items in both with different qty → PATCH delta (increase/decrease)
  */
 export async function syncAndNavigate(destUrl) {
-  const items = load();
+  const localItems = load();
 
   if (!_syncPromise) {
     _syncPromise = (async () => {
-      // 1. Delete all server items using cached removeApis
-      const serverState = loadServerState();
-      for (const item of serverState) {
-        try {
-          await fetch(item.removeApi, { method: 'DELETE', credentials: 'same-origin' });
-        } catch {}
-      }
-      // Clear the cache so a failed delete doesn't repeat on the next sync
-      localStorage.removeItem(SERVER_STATE_KEY);
+      const serverItems = await fetchServerCartItems();
 
-      // 2. POST fresh items from localStorage
-      for (const item of items) {
-        await fetch('/api/cart/mine/items', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          credentials: 'same-origin',
-          body: JSON.stringify({ sku: item.sku, qty: item.qty }),
-        });
+      // If server state is unreadable, skip sync to avoid corrupting cart
+      if (serverItems === null) return;
+
+      const serverMap = new Map(serverItems.map(i => [i.sku, i]));
+
+      // Remove server items not present in localStorage
+      for (const [sku, serverItem] of serverMap) {
+        if (!localItems.find(i => i.sku === sku)) {
+          await fetch(`/api/cart/mine/items/${serverItem.uuid}`, {
+            method: 'DELETE', credentials: 'same-origin',
+          }).catch(() => {});
+        }
+      }
+
+      // Add or adjust each localStorage item on the server
+      for (const localItem of localItems) {
+        const serverItem = serverMap.get(localItem.sku);
+        if (!serverItem) {
+          await fetch('/api/cart/mine/items', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'same-origin',
+            body: JSON.stringify({ sku: localItem.sku, qty: localItem.qty }),
+          }).catch(() => {});
+        } else if (serverItem.qty !== localItem.qty) {
+          const delta = localItem.qty - serverItem.qty;
+          await fetch(`/api/cart/mine/items/${serverItem.uuid}`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'same-origin',
+            body: JSON.stringify({
+              action: delta > 0 ? 'increase' : 'decrease',
+              qty: Math.abs(delta),
+            }),
+          }).catch(() => {});
+        }
       }
     })().finally(() => { _syncPromise = null; });
   }
