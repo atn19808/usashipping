@@ -11,7 +11,7 @@
     "user:create": "evershop user:create",
     "user:changePassword": "evershop user:changePassword",
     "evershop": "evershop",
-    "postinstall": "patch-package"
+    "postinstall": "patch-package && npx puppeteer browsers install chrome"
   },
   "workspaces": [
     "extensions/*"
