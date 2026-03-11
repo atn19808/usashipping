@@ -24,10 +24,20 @@
 const { google } = require('googleapis');
 
 async function readPriceSheet({ spreadsheetId, serviceAccountKeyFile, sheetName, source }) {
-  const auth = new google.auth.GoogleAuth({
-    keyFile: serviceAccountKeyFile,
-    scopes: ['https://www.googleapis.com/auth/spreadsheets.readonly']
-  });
+  // Prefer env var (base64-encoded JSON) so the key file doesn't need to be on disk in production.
+  // Set GOOGLE_SERVICE_ACCOUNT_JSON in Azure App Configuration as:
+  //   base64(cat config/costco-price-service-account.json)
+  let authOptions;
+  if (process.env.GOOGLE_SERVICE_ACCOUNT_JSON) {
+    const credentials = JSON.parse(
+      Buffer.from(process.env.GOOGLE_SERVICE_ACCOUNT_JSON, 'base64').toString('utf8')
+    );
+    authOptions = { credentials, scopes: ['https://www.googleapis.com/auth/spreadsheets.readonly'] };
+  } else {
+    authOptions = { keyFile: serviceAccountKeyFile, scopes: ['https://www.googleapis.com/auth/spreadsheets.readonly'] };
+  }
+
+  const auth = new google.auth.GoogleAuth(authOptions);
 
   const sheets = google.sheets({ version: 'v4', auth });
   const range = `${sheetName}!A:Z`;
