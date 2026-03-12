@@ -16,7 +16,7 @@
 
 const scrapeProductPage = require('../../quaxave_product_importer/execution/scrapeProductPage');
 
-async function scrapeCurrentPrices(products, { batchSize = 2, batchDelayMs = 15000 } = {}) {
+async function scrapeCurrentPrices(products, { batchSize = 2, batchDelayMs = 30000 } = {}) {
   const results = [];
   const totalBatches = Math.ceil(products.length / batchSize);
 
