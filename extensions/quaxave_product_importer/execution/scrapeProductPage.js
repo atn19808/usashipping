@@ -40,7 +40,7 @@ async function scrapeProductPage(url) {
 
   let browser;
   try {
-    browser = await puppeteer.launch({ headless: 'new', args });
+    browser = await puppeteer.launch({ headless: true, args });
 
     const page = await browser.newPage();
 

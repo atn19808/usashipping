@@ -27,7 +27,7 @@ module.exports = async (request, response, delegate, next) => {
     const productData = await scrapeProductPage(url);
     return response.status(OK).json({ data: productData });
   } catch (e) {
-    console.error('[scrapeProductUrl] Step 2 failed:', e.message);
+    console.error('[scrapeProductUrl] scrape failed:', e.message);
     return response.status(INTERNAL_SERVER_ERROR).json({
       error: { status: INTERNAL_SERVER_ERROR, message: e.message || 'Scrape failed' }
     });
