@@ -22,9 +22,7 @@
     "@evershop/evershop": "1.2.2",
     "@evershop/google_login": "^1.2.1",
     "googleapis": "^171.4.0",
-    "puppeteer": "^24.39.0",
-    "puppeteer-extra": "^3.3.6",
-    "puppeteer-extra-plugin-stealth": "^2.11.2"
+    "puppeteer": "^24.39.0"
   },
   "devDependencies": {
     "patch-package": "^8.0.1"
