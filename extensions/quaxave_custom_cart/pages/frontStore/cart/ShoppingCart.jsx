@@ -27,7 +27,6 @@ Title.propTypes = {
 
 export default function ShoppingCart({ cart, setting }) {
   const { totalQty = 0, items = [] } = cart || {};
-  console.log('items', JSON.stringify(items));
   if (totalQty <= 0) {
     return <Empty />;
   } else {
@@ -75,11 +74,15 @@ export default function ShoppingCart({ cart, setting }) {
 
 ShoppingCart.propTypes = {
   cart: PropTypes.shape({
-    uuid: PropTypes.string.isRequired
-  }).isRequired,
+    uuid: PropTypes.string
+  }),
   setting: PropTypes.shape({
     priceIncludingTax: PropTypes.bool
   }).isRequired
+};
+
+ShoppingCart.defaultProps = {
+  cart: null
 };
 
 export const layout = {

@@ -3,8 +3,7 @@ const { buildUrl } = require('@evershop/evershop/src/lib/router/buildUrl');
 const normalizePort = require('@evershop/evershop/bin/lib/normalizePort');
 const {
   OK,
-  INTERNAL_SERVER_ERROR,
-  INVALID_PAYLOAD
+  INTERNAL_SERVER_ERROR
 } = require('@evershop/evershop/src/lib/util/httpStatus');
 const { default: axios } = require('axios');
 const { select } = require('@evershop/postgres-query-builder');
@@ -32,13 +31,8 @@ module.exports = async (request, response, delegate, next) => {
     }
 
     if (!country) {
-      response.status(INVALID_PAYLOAD);
-      response.json({
-        error: {
-          status: INVALID_PAYLOAD,
-          message: 'Shipping country is required'
-        }
-      });
+      response.status(OK);
+      response.json({ data: { methods: [] } });
       return;
     }
 

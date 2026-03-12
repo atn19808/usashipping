@@ -1,7 +1,7 @@
 import PropTypes from 'prop-types';
 import React from 'react';
+import { _ } from '@evershop/evershop/src/lib/locale/translate';
 import { Discount } from '@components/frontStore/checkout/checkout/summary/cart/Discount';
-import { Shipping } from '@components/frontStore/checkout/checkout/summary/cart/Shipping';
 import { Subtotal } from '@components/frontStore/checkout/checkout/summary/cart/Subtotal';
 import { Tax } from '@components/frontStore/checkout/checkout/summary/cart/Tax';
 import { Total } from '@components/frontStore/checkout/checkout/summary/cart/Total';
@@ -20,6 +20,14 @@ function CartSummary({
   coupon,
   priceIncludingTax
 }) {
+  const [liveShippingCost, setLiveShippingCost] = React.useState(shippingFeeInclTax?.text || '');
+
+  React.useEffect(() => {
+    const handler = (e) => setLiveShippingCost(e.detail.cost);
+    window.addEventListener('shipping-cost-updated', handler);
+    return () => window.removeEventListener('shipping-cost-updated', handler);
+  }, []);
+
   return (
     <div className="checkout-summary-block">
       <Subtotal
@@ -29,7 +37,9 @@ function CartSummary({
       {!priceIncludingTax && <Tax amount={totalTaxAmount.text} />}
       <Discount code={coupon} discount={discountAmount.text} />
       <TotalWeight totalWeight={totalWeight} />
-      <Shipping method={shippingMethodName} cost={shippingFeeInclTax.text} />
+      {liveShippingCost && (
+        <div className="flex justify-between gap-12"><div>{_('Shipping')}</div><div className="text-right">{liveShippingCost}</div></div>
+      )}
       <Total
         totalTaxAmount={totalTaxAmount}
         total={grandTotal}

@@ -68,22 +68,22 @@ ShipmentStep.propTypes = {
     addresses: PropTypes.arrayOf(
       PropTypes.shape({
         uuid: PropTypes.string.isRequired,
-        senderFullName: PropTypes.string.isRequired,
-        senderTelephone: PropTypes.string.isRequired,
-        fullName: PropTypes.string.isRequired,
-        telephone: PropTypes.string.isRequired,
+        senderFullName: PropTypes.string,
+        senderTelephone: PropTypes.string,
+        fullName: PropTypes.string,
+        telephone: PropTypes.string,
         country: PropTypes.shape({
-          name: PropTypes.string.isRequired,
-          code: PropTypes.string.isRequired
+          name: PropTypes.string,
+          code: PropTypes.string
         }),
         province: PropTypes.shape({
           name: PropTypes.string,
           code: PropTypes.string
         }),
-        city: PropTypes.string.isRequired,
-        address1: PropTypes.string.isRequired,
-        postcode: PropTypes.string.isRequired,
-        isDefault: PropTypes.bool.isRequired
+        city: PropTypes.string,
+        address1: PropTypes.string,
+        postcode: PropTypes.string,
+        isDefault: PropTypes.bool
       })
     ).isRequired
   }),

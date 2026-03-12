@@ -30,7 +30,7 @@ const PRODUCT_FIELDS = `
 const STORE_QUERY = `
   query StoreProducts($urlKey: String!) {
     categoryByUrlKey(urlKey: $urlKey) {
-      products(filters: [{key: "limit", operation: eq, value: "20"}]) {
+      products(filters: [{key: "limit", operation: eq, value: "200"}]) {
         items { ${PRODUCT_FIELDS} }
       }
     }
@@ -87,11 +87,6 @@ export default function FeaturedProducts({ category, cart: ssrCart }) {
               </button>
             ))}
           </nav>
-          {activeStoreMeta && (
-            <a href={activeStoreMeta.url} className="view-all-link">
-              Xem tất cả →
-            </a>
-          )}
         </div>
       </div>
 
@@ -143,7 +138,7 @@ export const layout = {
 export const query = `
   query query {
     category: categoryByUrlKey(urlKey: "costco") {
-      products(filters: [{key: "limit", operation: eq, value: "20"}]) {
+      products(filters: [{key: "limit", operation: eq, value: "200"}]) {
         items {
           uuid
           productId

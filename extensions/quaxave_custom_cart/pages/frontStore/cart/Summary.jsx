@@ -58,6 +58,40 @@ Discount.defaultProps = {
   coupon: ''
 };
 
+// Fixed shipping rate ($/lb) — update here when rate changes
+const RATE_PER_LB = 5;
+
+function Shipping({ shippingFeeInclTax, totalWeight }) {
+  const isEstimate = !shippingFeeInclTax?.value;
+  const displayText = isEstimate
+    ? Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(
+        (totalWeight?.value || 0) * RATE_PER_LB
+      )
+    : shippingFeeInclTax.text;
+
+  return (
+    <div className="flex justify-between gap-12">
+      <div>{_('Shipping')}{isEstimate ? ' (est.)' : ''}</div>
+      <div className="text-right">{displayText}</div>
+    </div>
+  );
+}
+
+Shipping.propTypes = {
+  shippingFeeInclTax: PropTypes.shape({
+    value: PropTypes.number,
+    text: PropTypes.string
+  }),
+  totalWeight: PropTypes.shape({
+    value: PropTypes.number
+  })
+};
+
+Shipping.defaultProps = {
+  shippingFeeInclTax: { value: 0, text: '' },
+  totalWeight: { value: 0 }
+};
+
 function Summary({
   checkoutUrl,
 
@@ -69,7 +103,8 @@ function Summary({
     totalTaxAmount,
     grandTotal,
     coupon,
-    discountAmount
+    discountAmount,
+    shippingFeeInclTax
   },
   setting: { priceIncludingTax }
 }) {
@@ -121,12 +156,20 @@ function Summary({
               id: 'shoppingCartTotalWeight'
             },
             {
+              component: { default: Shipping },
+              props: { shippingFeeInclTax, totalWeight },
+              sortOrder: 50,
+              id: 'shoppingCartShipping'
+            },
+            {
               // eslint-disable-next-line react/no-unstable-nested-components
               component: {
                 default: Total
               },
               props: {
-                total: grandTotal,
+                total: shippingFeeInclTax?.value
+                  ? grandTotal
+                  : { ...grandTotal, value: grandTotal.value + (totalWeight?.value || 0) * RATE_PER_LB },
                 totalTaxAmount: totalTaxAmount,
                 priceIncludingTax,
                 totalWeight: totalWeight
@@ -166,6 +209,10 @@ Summary.propTypes = {
       text: PropTypes.string
     }),
     discountAmount: PropTypes.shape({
+      value: PropTypes.number,
+      text: PropTypes.string
+    }),
+    shippingFeeInclTax: PropTypes.shape({
       value: PropTypes.number,
       text: PropTypes.string
     }),
@@ -214,6 +261,10 @@ export const query = `
         text
       }
       discountAmount {
+        value
+        text
+      }
+      shippingFeeInclTax {
         value
         text
       }

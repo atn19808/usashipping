@@ -13,26 +13,13 @@ const FX_QUERY = `
   }
 `;
 
-const RATE_QUERY = `
-  query {
-    weightBasedShippingRate
-  }
-`;
-
 export function Total(props) {
-  const { total, totalTaxAmount, priceIncludingTax, totalWeight } = props;
+  const { total, totalTaxAmount, priceIncludingTax } = props;
 
-  const [rateResult] = useQuery({ query: RATE_QUERY });
-  const costPerLb = rateResult.data?.weightBasedShippingRate ?? null;
-  const shippingCost = (costPerLb != null && totalWeight?.value != null)
-    ? totalWeight.value * costPerLb
-    : 0;
-
-  let baseValue = total.value;
+  let grandValue = total.value;
   if (priceIncludingTax) {
-    baseValue += totalTaxAmount.value;
+    grandValue += totalTaxAmount.value;
   }
-  const grandValue = baseValue + shippingCost;
   const totalText = Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(grandValue);
 
   const [fxResult] = useQuery({
@@ -75,13 +62,9 @@ Total.propTypes = {
     value: PropTypes.number,
     text: PropTypes.string
   }).isRequired,
-  priceIncludingTax: PropTypes.bool,
-  totalWeight: PropTypes.shape({
-    value: PropTypes.number
-  })
+  priceIncludingTax: PropTypes.bool
 };
 
 Total.defaultProps = {
-  priceIncludingTax: false,
-  totalWeight: null
+  priceIncludingTax: false
 };
