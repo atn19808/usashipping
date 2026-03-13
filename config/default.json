@@ -66,13 +66,13 @@
         "name": "fetchRate",
         "resolve": "@evershop/../../extensions/quaxave_fetch_pricing/jobs/fetchRate.js",
         "schedule": "0 */12 * * *",
-        "enabled": true
+        "enabled": false
       },
       {
         "name": "scrapeAndStagePrices",
         "resolve": "@evershop/../../extensions/quaxave_sync_product_pricing/jobs/scrapeAndStagePrices.js",
         "schedule": "0 2 * * *",
-        "enabled": true
+        "enabled": false
       }
     ]
   },

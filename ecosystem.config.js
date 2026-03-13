@@ -2,8 +2,8 @@ module.exports = {
   apps: [
     {
       name: "evershopAzure",
-      script: "start.sh",
-      interpreter: "bash",
+      script: "npm",
+      args: "run start",
       env: {
         NODE_ENV: "default",
         PORT: 3000,
