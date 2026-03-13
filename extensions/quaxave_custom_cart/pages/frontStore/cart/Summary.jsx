@@ -58,21 +58,11 @@ Discount.defaultProps = {
   coupon: ''
 };
 
-// Fixed shipping rate ($/lb) — update here when rate changes
-const RATE_PER_LB = 5;
-
-function Shipping({ shippingFeeInclTax, totalWeight }) {
-  const isEstimate = !shippingFeeInclTax?.value;
-  const displayText = isEstimate
-    ? Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(
-        (totalWeight?.value || 0) * RATE_PER_LB
-      )
-    : shippingFeeInclTax.text;
-
+function Shipping({ shippingFeeInclTax }) {
   return (
     <div className="flex justify-between gap-12">
-      <div>{_('Shipping')}{isEstimate ? ' (est.)' : ''}</div>
-      <div className="text-right">{displayText}</div>
+      <div>{_('Shipping')}</div>
+      <div className="text-right">{shippingFeeInclTax?.text}</div>
     </div>
   );
 }
@@ -81,15 +71,11 @@ Shipping.propTypes = {
   shippingFeeInclTax: PropTypes.shape({
     value: PropTypes.number,
     text: PropTypes.string
-  }),
-  totalWeight: PropTypes.shape({
-    value: PropTypes.number
   })
 };
 
 Shipping.defaultProps = {
-  shippingFeeInclTax: { value: 0, text: '' },
-  totalWeight: { value: 0 }
+  shippingFeeInclTax: { value: 0, text: '' }
 };
 
 function Summary({
@@ -157,7 +143,7 @@ function Summary({
             },
             {
               component: { default: Shipping },
-              props: { shippingFeeInclTax, totalWeight },
+              props: { shippingFeeInclTax },
               sortOrder: 50,
               id: 'shoppingCartShipping'
             },
@@ -167,9 +153,7 @@ function Summary({
                 default: Total
               },
               props: {
-                total: shippingFeeInclTax?.value
-                  ? grandTotal
-                  : { ...grandTotal, value: grandTotal.value + (totalWeight?.value || 0) * RATE_PER_LB },
+                total: grandTotal,
                 totalTaxAmount: totalTaxAmount,
                 priceIncludingTax,
                 totalWeight: totalWeight

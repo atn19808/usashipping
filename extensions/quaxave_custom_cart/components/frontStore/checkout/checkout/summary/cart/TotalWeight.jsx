@@ -4,7 +4,7 @@ import { _ } from '@evershop/evershop/src/lib/locale/translate';
 
 export default function TotalWeight({ totalWeight }) {
   return (
-    <div className="flex justify-between gap-12">
+    <div className="flex justify-between gap-12 mb-4">
       <div>{_('Total weight')}</div>
       <div className="text-right">{totalWeight?.text}</div>
     </div>

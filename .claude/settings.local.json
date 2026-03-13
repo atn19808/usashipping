@@ -60,7 +60,10 @@
       "Bash(curl -v --max-time 5 http://localhost:3000/cart)",
       "Bash(find .evershop -name *.js)",
       "Bash(time curl:*)",
-      "Bash(npm run:*)"
+      "Bash(npm run:*)",
+      "Bash(find /c/Users/atn19/repos/usashipping/node_modules/@evershop/evershop/src/modules/checkout -name *shipping* -type f)",
+      "Bash(grep -r \"checkout-summary-block\\\\|summary-row\" node_modules/@evershop/evershop/src/modules/checkout --include=*.scss -l)",
+      "Bash(grep -r summary-row node_modules/@evershop/evershop/src/components/frontStore/checkout --include=*.jsx -l)"
     ]
   }
 }

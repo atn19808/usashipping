@@ -20,14 +20,6 @@ function CartSummary({
   coupon,
   priceIncludingTax
 }) {
-  const [liveShippingCost, setLiveShippingCost] = React.useState(shippingFeeInclTax?.text || '');
-
-  React.useEffect(() => {
-    const handler = (e) => setLiveShippingCost(e.detail.cost);
-    window.addEventListener('shipping-cost-updated', handler);
-    return () => window.removeEventListener('shipping-cost-updated', handler);
-  }, []);
-
   return (
     <div className="checkout-summary-block">
       <Subtotal
@@ -37,8 +29,8 @@ function CartSummary({
       {!priceIncludingTax && <Tax amount={totalTaxAmount.text} />}
       <Discount code={coupon} discount={discountAmount.text} />
       <TotalWeight totalWeight={totalWeight} />
-      {liveShippingCost && (
-        <div className="flex justify-between gap-12"><div>{_('Shipping')}</div><div className="text-right">{liveShippingCost}</div></div>
+      {shippingFeeInclTax?.text && (
+        <div className="flex justify-between gap-12 mb-4"><div>{_('Shipping')}</div><div className="text-right">{shippingFeeInclTax.text}</div></div>
       )}
       <Total
         totalTaxAmount={totalTaxAmount}
