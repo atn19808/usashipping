@@ -32,23 +32,8 @@ jobs:
           npm run test --if-present
           npm prune --omit=dev
 
-      - name: Package node_modules as tarball
-        run: |
-          cd node_modules
-          tar -czf ../node_modules.tar.gz \
-            --exclude='./quaxave_custom_address' \
-            --exclude='./quaxave_custom_cart' \
-            --exclude='./quaxave_custom_login' \
-            --exclude='./quaxave_custom_product_view' \
-            --exclude='./quaxave_fetch_pricing' \
-            --exclude='./quaxave_product_importer' \
-            --exclude='./quaxave_sync_product_pricing' \
-            --exclude='./quaxave_weight_base_shipping' \
-            .
-          cd ..
-
       - name: Zip artifact for deployment
-        run: zip release.zip . -r -x 'node_modules/*' 'release.zip' '.github/*' '.git/*' '.gitignore' 'README.md' '.env'
+        run: zip release.zip . -r -x 'release.zip' '.github/*' '.git/*' '.gitignore' 'README.md' '.env'
 
       - name: Upload artifact for deployment job
         uses: actions/upload-artifact@v4
