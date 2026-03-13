@@ -61,6 +61,8 @@ export default function Quantity({ qty: quantity, isLoading, onChangeQty, onRemo
                             className="icon icon-minus"
                             fill="none"
                             viewBox="0 0 10 2"
+                            width="19"
+                            height="19"
                         >
                             <path
                                 fillRule="evenodd"
@@ -109,6 +111,8 @@ export default function Quantity({ qty: quantity, isLoading, onChangeQty, onRemo
                             viewBox="0 0 24 24"
                             stroke="currentColor"
                             strokeWidth="2"
+                            width="19"
+                            height="19"
                         >
                             <path
                                 strokeLinecap="round"
@@ -154,6 +158,8 @@ export default function Quantity({ qty: quantity, isLoading, onChangeQty, onRemo
                         className="icon icon-plus"
                         fill="none"
                         viewBox="0 0 10 10"
+                        width="19"
+                        height="19"
                     >
                         <path
                             fillRule="evenodd"
