@@ -35,7 +35,7 @@ jobs:
       - name: Package node_modules as tarball
         run: |
           cd node_modules
-          tar -czf ../node_modules.tar.gz . \
+          tar -czf ../node_modules.tar.gz \
             --exclude='./quaxave_custom_address' \
             --exclude='./quaxave_custom_cart' \
             --exclude='./quaxave_custom_login' \
@@ -43,7 +43,8 @@ jobs:
             --exclude='./quaxave_fetch_pricing' \
             --exclude='./quaxave_product_importer' \
             --exclude='./quaxave_sync_product_pricing' \
-            --exclude='./quaxave_weight_base_shipping'
+            --exclude='./quaxave_weight_base_shipping' \
+            .
           cd ..
 
       - name: Zip artifact for deployment
