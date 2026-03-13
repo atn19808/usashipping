@@ -1,8 +1,7 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import PropTypes from 'prop-types';
 import { _ } from '@evershop/evershop/src/lib/locale/translate';
 import Spinner from '@components/common/Spinner';
-import { useQuery } from 'urql';
 import './Total.scss';
 
 const FX_QUERY = `
@@ -22,11 +21,22 @@ export function Total(props) {
   }
   const totalText = Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(grandValue);
 
-  const [fxResult] = useQuery({
-    query: FX_QUERY,
-    variables: { source: 'usd', target: 'vnd' }
-  });
-  const { data, fetching, error: queryError } = fxResult;
+  const [fxState, setFxState] = useState({ data: null, fetching: true, error: null });
+  useEffect(() => {
+    fetch('/api/graphql', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ query: FX_QUERY, variables: { source: 'usd', target: 'vnd' } }),
+    })
+      .then((r) => r.json())
+      .then((json) => {
+        setFxState({ data: json.data, fetching: false, error: json.errors?.[0] ?? null });
+      })
+      .catch((err) => {
+        setFxState({ data: null, fetching: false, error: err });
+      });
+  }, []);
+  const { data, fetching, error: queryError } = fxState;
 
   let vndText = '⚠️';
   if (queryError) {

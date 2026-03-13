@@ -1,9 +1,9 @@
 import React from 'react';
 
-// Hide the core breadcrumb on search — our General.jsx already shows
-// "Trang chủ / Tìm kiếm" in the search header.
+// Suppress the auto-generated English breadcrumb on the search page.
+// Our General.jsx already renders the Vietnamese "Trang chủ / Tìm kiếm" header.
 export default function Breadcrumb() {
-  return null;
+  return <style>{'.breadcrumb.page-width { display: none !important; }'}</style>;
 }
 
 export const layout = {

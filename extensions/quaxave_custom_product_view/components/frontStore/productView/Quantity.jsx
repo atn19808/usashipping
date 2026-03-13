@@ -25,7 +25,7 @@ export default function Quantity({ qty: quantity, isLoading, onChangeQty, onRemo
     }
 
     return (
-        <div className="qty-box grid grid-cols-3 border border-[#ccc]">
+        <div className="qty-box">
             {quantity > 1 && (
                 <button
                     className="flex justify-center items-center"

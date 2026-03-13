@@ -1,7 +1,6 @@
 import PropTypes from 'prop-types';
 import React, { useEffect, useState } from 'react';
 import { toast } from 'react-toastify';
-import { useQuery } from 'urql';
 import Area from '@components/common/Area';
 import { useCheckoutStepsDispatch } from '@components/common/context/checkoutSteps';
 import CustomerAddressForm from '@components/frontStore/customer/address/addressForm/Index';
@@ -86,13 +85,26 @@ export function StepContent({
     }
   }, [error]);
 
-  const [result] = useQuery({
-    query: QUERY,
-    variables: {
-      cartId
-    }
-  });
-  const { data, fetching, error: queryError } = result;
+  const [fetching, setFetching] = useState(true);
+  const [data, setData] = useState(null);
+  const [queryError, setQueryError] = useState(null);
+
+  useEffect(() => {
+    if (!cartId) return;
+    setFetching(true);
+    fetch('/api/graphql', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ query: QUERY, variables: { cartId } }),
+    })
+      .then((r) => r.json())
+      .then((json) => {
+        if (json.errors) setQueryError(new Error(json.errors[0].message));
+        else setData(json.data);
+        setFetching(false);
+      })
+      .catch((err) => { setQueryError(err); setFetching(false); });
+  }, [cartId]);
 
   const billingAddressData = useShippingAddress ?
     data?.cart?.shippingAddress :
@@ -110,7 +122,7 @@ export function StepContent({
   }
 
   if (queryError) {
-    return <div className="p-8 text-critical">{error.message}</div>;
+    return <div className="p-8 text-critical">{queryError.message}</div>;
   }
 
   return (

@@ -4,7 +4,6 @@ import React from 'react';
 import produce from 'immer';
 import axios from 'axios';
 import { toast } from 'react-toastify';
-import { useClient } from 'urql';
 import CustomerAddressForm from '@components/frontStore/customer/address/addressForm/Index';
 import { Form } from '@components/common/form/Form';
 import { useCheckout } from '@components/common/context/checkout';
@@ -47,7 +46,6 @@ export function StepContent({
   addresses
 }) {
   const { cartId } = useCheckout();
-  const client = useClient();
   const { completeStep } = useCheckoutStepsDispatch();
 
   React.useEffect(() => {
@@ -114,10 +112,13 @@ export function StepContent({
         btnText={_('Continue to payment')}
         onSuccess={async (response) => {
           if (!response.error) {
-            const result = await client
-              .query(QUERY, { cartId })
-              .toPromise();
-            const address = result.data.cart.shippingAddress;
+            const gqlResp = await fetch('/api/graphql', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ query: QUERY, variables: { cartId } }),
+            });
+            const gqlJson = await gqlResp.json();
+            const address = gqlJson.data.cart.shippingAddress;
             setShipmentInfo(
               produce(shipmentInfo, (draff) => {
                 draff.address = address;

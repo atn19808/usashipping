@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import PropTypes from 'prop-types';
-import { useLocalCart, syncAndNavigate } from '../../../components/common/localCart';
+import { useLocalCart } from '../../../components/common/localCart';
 
 function SearchIcon() {
   return (
@@ -54,7 +54,6 @@ export default function HeaderActions({
 
   const [showSearch, setShowSearch] = useState(false);
   const [keyword, setKeyword] = useState('');
-  const [syncing, setSyncing] = useState(false);
 
   const handleSearch = (e) => {
     if (e.key === 'Enter' && keyword.trim()) {
@@ -66,13 +65,9 @@ export default function HeaderActions({
 
   const cartPath = (() => { try { return new URL(cartUrl).pathname; } catch { return cartUrl; } })();
 
-  const handleCartClick = async (e) => {
+  const handleCartClick = (e) => {
     e.preventDefault();
-    if (syncing) return;
-    if (totalQty === 0) { window.location.href = cartPath; return; }
-    setSyncing(true);
-    await syncAndNavigate(cartPath);
-    setSyncing(false);
+    window.location.href = cartPath;
   };
 
   const isLoggedIn = !!customer?.uuid;
@@ -116,7 +111,7 @@ export default function HeaderActions({
 
       <a
         href={cartPath}
-        className={`hdr-action-btn hdr-cart-btn${syncing ? ' hdr-cart-syncing' : ''}`}
+        className="hdr-action-btn hdr-cart-btn"
         onClick={handleCartClick}
       >
         <span className="hdr-cart-icon-wrap">
@@ -125,9 +120,7 @@ export default function HeaderActions({
             <span className="hdr-cart-badge">{totalQty}</span>
           )}
         </span>
-        <span className="hdr-action-label">
-          {syncing ? 'Đang tải...' : 'Giỏ hàng'}
-        </span>
+        <span className="hdr-action-label">Giỏ hàng</span>
       </a>
 
     </div>

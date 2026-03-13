@@ -52,11 +52,15 @@ module.exports = async function resolver() {
                     `Your shipping calculate API ${shippingMethod.calculate_api} is invalid`
                 );
             }
-            const response = await axios.get(api);
-            if (response.status < 400) {
-                return toPrice(response.data.data.cost);
-            } else {
-                this.setError('shipping_fee_excl_tax', response.data.message);
+            try {
+                const response = await axios.get(api, { timeout: 5000 });
+                if (response.status < 400) {
+                    return toPrice(response.data.data.cost);
+                } else {
+                    this.setError('shipping_fee_excl_tax', response.data.message);
+                    return 0;
+                }
+            } catch {
                 return 0;
             }
         } else if (shippingMethod.weight_based_cost) {

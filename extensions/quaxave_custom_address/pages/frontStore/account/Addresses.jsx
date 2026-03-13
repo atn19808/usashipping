@@ -192,8 +192,8 @@ Addresses.propTypes = {
     addresses: PropTypes.arrayOf(
       PropTypes.shape({
         uuid: PropTypes.string.isRequired,
-        senderFullName: PropTypes.string.isRequired,
-        senderTelephone: PropTypes.string.isRequired,
+        senderFullName: PropTypes.string,
+        senderTelephone: PropTypes.string,
         fullName: PropTypes.string.isRequired,
         telephone: PropTypes.string.isRequired,
         address1: PropTypes.string.isRequired,

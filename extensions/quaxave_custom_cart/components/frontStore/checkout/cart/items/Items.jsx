@@ -7,25 +7,33 @@ import ProductNoThumbnail from '@components/common/ProductNoThumbnail';
 import { ItemOptions } from '@evershop/evershop/src/components/frontStore/checkout/cart/items/ItemOptions';
 import { ItemVariantOptions } from '@evershop/evershop/src/components/frontStore/checkout/cart/items/ItemVariantOptions';
 import CartQuantity from './CartQuantity';
+import { removeItem as removeLocalItem } from 'quaxave_custom_product_view/components/common/localCart';
 import './Items.scss';
 
 function Items({ items, setting: { priceIncludingTax } }) {
   const AppContextDispatch = useAppDispatch();
   const removeItem = async (item) => {
-    const response = await fetch(item.removeApi, {
-      method: 'DELETE',
-      headers: {
-        'Content-Type': 'application/json'
+    // Update localStorage immediately so badge drops at once and CartSync won't re-add
+    // the item if the user navigates away before fetchPageData completes.
+    removeLocalItem(item.productSku);
+    try {
+      const response = await fetch(item.removeApi, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
+      if (response.ok) {
+        const currentUrl = window.location.href;
+        const url = new URL(currentUrl, window.location.origin);
+        url.searchParams.set('ajax', true);
+        await AppContextDispatch.fetchPageData(url);
+      } else {
+        const data = await response.json();
+        toast(data.error.message);
       }
-    });
-    if (response.ok) {
-      const currentUrl = window.location.href;
-      const url = new URL(currentUrl, window.location.origin);
-      url.searchParams.set('ajax', true);
-      await AppContextDispatch.fetchPageData(url);
-    } else {
-      const data = await response.json();
-      toast(data.error.message);
+    } catch (e) {
+      toast(e.message);
     }
   };
 

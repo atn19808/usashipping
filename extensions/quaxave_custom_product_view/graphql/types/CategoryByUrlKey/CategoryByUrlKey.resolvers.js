@@ -13,7 +13,6 @@ module.exports = {
           'category.category_id'
         );
       query.where('category_description.url_key', '=', urlKey);
-      query.andWhere('category.status', '=', 1);
       const result = await query.load(pool);
       return result ? camelCase(result) : null;
     }
