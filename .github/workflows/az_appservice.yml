@@ -68,4 +68,3 @@ jobs:
           slot-name: "Production"
           package: .
           publish-profile: ${{ secrets.AZ_APPSERVICE_PUBLISHPROFILE }}
-          clean: true

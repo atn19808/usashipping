@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "description": "USA Shopping",
   "scripts": {
+    "prestart": "rm -f 'extensions/quaxave_product_importer/api/importScrapedProduct/importProduct[finish].js'",
     "start": "evershop start",
     "build": "evershop build",
     "dev": "evershop dev",
