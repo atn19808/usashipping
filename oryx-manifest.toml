@@ -1,0 +1,3 @@
+NodeVersion = "20.x"
+OperatingSystem = "linux"
+CompressedNodeModulesFile = ""
