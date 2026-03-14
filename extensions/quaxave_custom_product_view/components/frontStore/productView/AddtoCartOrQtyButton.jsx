@@ -6,10 +6,12 @@ import './AddtoCartOrQtyButton.scss';
 import Quantity from './Quantity';
 
 export default function AddtoCartOrQtyButton({ product }) {
-  const [qty, setQty] = useState(() => getItemQty(product.sku));
+  // Initialize to 0 so SSR and first client render match (avoids hydration mismatch)
+  const [qty, setQty] = useState(0);
 
-  // Stay in sync if another component updates the cart
   useEffect(() => {
+    // Read localStorage only after mount (not available on server)
+    setQty(getItemQty(product.sku));
     const handler = (e) => {
       const item = e.detail.find(i => i.sku === product.sku);
       setQty(item?.qty ?? 0);
