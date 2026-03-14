@@ -12,7 +12,7 @@
  *   price: number|null,
  *   itemNumber: string,
  *   weight: number|null,
- *   description: string,
+ *   features: string[],
  *   imageUrls: string[]
  * }>}
  */
@@ -80,14 +80,37 @@ async function scrapeProductPage(url) {
     });
     await new Promise((r) => setTimeout(r, 1500));
 
+    // Scroll through the page to trigger lazy-loaded carousel images
+    await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight / 2));
+    await new Promise((r) => setTimeout(r, 1000));
+    await page.evaluate(() => window.scrollTo(0, 0));
+    await new Promise((r) => setTimeout(r, 500));
+
     const data = await page.evaluate(() => {
       const name = document.querySelector('h1')?.textContent.trim() || null;
 
-      const priceEl = Array.from(document.querySelectorAll('[class*="Mui"]'))
-        .find((el) => /^\$[0-9]/.test(el.textContent.trim()) && el.textContent.trim().length < 20);
-      const priceRaw = priceEl ? priceEl.textContent.trim() : '';
-      const priceMatch = priceRaw.replace(/,/g, '').match(/\d+\.\d{2}/);
-      const price = priceMatch ? parseFloat(priceMatch[0]) : null;
+      // Try automation-id first (most reliable), then fall back to MUI text search
+      let price = null;
+      const autoIdPriceEl = document.querySelector('[automation-id="product-price"]');
+      if (autoIdPriceEl) {
+        const m = autoIdPriceEl.textContent.replace(/,/g, '').match(/\d+\.\d{2}/);
+        if (m) price = parseFloat(m[0]);
+      }
+      if (price === null) {
+        // Find deepest MUI leaf element whose own text starts with $ and is short
+        const muiEls = Array.from(document.querySelectorAll('[class*="Mui"]'));
+        const priceEl = muiEls.find((el) => {
+          const t = el.textContent.trim();
+          if (!/^\$[0-9]/.test(t)) return false;
+          // Prefer elements where the first price-like token is the whole short text
+          const firstPrice = t.match(/^\$[\d,]+\.\d{2}/);
+          return firstPrice && firstPrice[0].length >= t.length - 1;
+        });
+        if (priceEl) {
+          const m = priceEl.textContent.replace(/,/g, '').match(/\d+\.\d{2}/);
+          if (m) price = parseFloat(m[0]);
+        }
+      }
 
       const bodyText = document.body.innerText;
       const itemMatch = bodyText.match(/Item\s*#?\s*([0-9]{6,})/i);
@@ -96,12 +119,15 @@ async function scrapeProductPage(url) {
       const weightMatch = bodyText.match(/Weight[:\s]+([0-9.]+)\s*(lb|lbs|oz|kg|g\b)/i);
       const weight = weightMatch ? parseFloat(weightMatch[1]) : null;
 
+      // Collect images from src and data-src; drop the /__[0-9] restriction
+      // which is too strict for products using paths like /__web/ or hash-based paths
       const imageUrls = [...new Set(
         Array.from(document.querySelectorAll('img'))
-          .filter((img) => img.src && img.src.includes('bfasset.costco-static.com') && /__[0-9]/.test(img.src))
-          .map((img) => {
-            const base = img.src.split('?')[0];
-            return `${base}?auto=webp&format=jpg&width=1024&height=1024&fit=bounds&canvas=1024,1024`;
+          .flatMap((img) => [img.src, img.dataset.src, img.getAttribute('data-lazy-src')].filter(Boolean))
+          .filter((src) => src.includes('bfasset.costco-static.com'))
+          .map((src) => {
+            const base = src.split('?')[0];
+            return `${base}?format=jpg&width=1024&height=1024&fit=bounds&canvas=1024,1024`;
           })
       )];
 
@@ -109,16 +135,7 @@ async function scrapeProductPage(url) {
         .map((el) => el.textContent.trim())
         .filter((t) => t.length > 0 && t.length < 300);
 
-      const specRows = Array.from(document.querySelectorAll('table tr'))
-        .map((el) => el.textContent.trim())
-        .filter((t) => t.length > 0 && t.length < 200);
-
-      const description = [
-        features.length > 0 ? '<ul>' + features.map((f) => `<li>${f}</li>`).join('') + '</ul>' : '',
-        specRows.length > 0 ? '<ul>' + specRows.map((r) => `<li>${r}</li>`).join('') + '</ul>' : ''
-      ].filter(Boolean).join('');
-
-      return { name, price, itemNumber, weight, imageUrls, description };
+      return { name, price, itemNumber, weight, imageUrls, features };
     });
 
     return {
@@ -126,7 +143,7 @@ async function scrapeProductPage(url) {
       price: data.price,
       itemNumber: data.itemNumber,
       weight: data.weight,
-      description: data.description || '',
+      features: data.features || [],
       imageUrls: data.imageUrls
     };
   } finally {

@@ -11,7 +11,7 @@ const downloadAndUploadImages = require('../../execution/downloadAndUploadImages
 const createEverShopProduct = require('../../execution/createEverShopProduct');
 
 module.exports = async (request, response, delegate, next) => {
-  const { name, price, weight, description, sku, imageUrls, url_key } = request.body || {};
+  const { name, price, weight, features, sku, imageUrls, url_key } = request.body || {};
 
   if (!name || price == null || !sku) {
     return response.status(INVALID_PAYLOAD).json({
@@ -31,7 +31,7 @@ module.exports = async (request, response, delegate, next) => {
       sku,
       price,
       weight,
-      description,
+      features: Array.isArray(features) ? features : [],
       imageUrls: uploadedImageUrls,
       url_key
     });

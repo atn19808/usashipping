@@ -45,8 +45,9 @@ async function downloadAndUploadImages(imageUrls) {
   for (let i = 0; i < imageUrls.length; i++) {
     try {
       const buffer = await downloadImageBuffer(imageUrls[i]);
-      const ext = path.extname(new URL(imageUrls[i]).pathname) || '.jpg';
-      const filename = generateFileName(`costco-product-${i + 1}${ext}`);
+      // Always use .jpg — we request format=jpg from the CDN regardless of the URL's path extension
+      // Include a timestamp to avoid filename collisions across separate imports
+      const filename = generateFileName(`costco-product-${Date.now()}-${i + 1}.jpg`);
 
       const results = await uploadFile(
         [{ filename, buffer, minetype: 'image/jpeg', size: buffer.length }],
