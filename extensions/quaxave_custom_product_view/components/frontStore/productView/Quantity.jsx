@@ -25,7 +25,7 @@ export default function Quantity({ qty: quantity, isLoading, onChangeQty, onRemo
     }
 
     return (
-        <div className="qty-box">
+        <div className="qty-box flex items-center w-full" style={{ gap: '4px' }}>
             {quantity > 1 && (
                 <button
                     className="flex justify-center items-center"
