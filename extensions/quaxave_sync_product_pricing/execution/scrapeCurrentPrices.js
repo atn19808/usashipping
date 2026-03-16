@@ -32,24 +32,41 @@ async function scrapeCurrentPrices(products, { batchSize = 2, batchDelayMs = 300
       let livePrice = null;
       let itemNumber = null;
       let scrapeError = null;
+      let membersOnly = false;
 
-      try {
-        const scraped = await scrapeProductPage(product.link);
-        livePrice = scraped.price;
-        itemNumber = scraped.itemNumber || null;
+      let attempts = 0;
+      const maxAttempts = 2;
+      while (attempts < maxAttempts) {
+        attempts++;
+        try {
+          const scraped = await scrapeProductPage(product.link);
+          livePrice = scraped.price;
+          itemNumber = scraped.itemNumber || null;
+          membersOnly = scraped.membersOnly || false;
 
-        if (livePrice !== null) {
-          console.log(`    → $${livePrice}${product.sheetPrice ? ` (sheet: $${product.sheetPrice})` : ''}`);
-        } else {
-          scrapeError = 'Price not found — product may be out of stock, members-only, or selectors drifted';
-          console.log(`    → price not found`);
+          if (livePrice !== null) {
+            console.log(`    → $${livePrice}${product.sheetPrice ? ` (sheet: $${product.sheetPrice})` : ''}`);
+          } else if (membersOnly) {
+            scrapeError = 'Members-only — Sign In for Price';
+            console.log(`    → members-only (sign in required)`);
+          } else {
+            scrapeError = 'Price not found — product may be out of stock or selectors drifted';
+            console.log(`    → price not found`);
+          }
+          break; // success — stop retrying
+        } catch (err) {
+          const isTimeout = /timeout|navigation/i.test(err.message);
+          if (isTimeout && attempts < maxAttempts) {
+            console.log(`    → timeout on attempt ${attempts}, retrying in 20s...`);
+            await new Promise((r) => setTimeout(r, 20000));
+          } else {
+            scrapeError = err.message;
+            console.log(`    → ERROR: ${scrapeError}`);
+          }
         }
-      } catch (err) {
-        scrapeError = err.message;
-        console.log(`    → ERROR: ${scrapeError}`);
       }
 
-      results.push({ ...product, livePrice, itemNumber, scrapeError });
+      results.push({ ...product, livePrice, itemNumber, scrapeError, membersOnly });
     }
 
     if (i + batchSize < products.length) {

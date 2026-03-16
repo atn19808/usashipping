@@ -52,8 +52,9 @@ async function readPriceSheet({ spreadsheetId, serviceAccountKeyFile, sheetName,
 
   const headers = rows[0].map((h) => (h || '').trim().toLowerCase());
 
-  const nameCol  = headers.findIndex((h) => h === 'name');
-  const priceCol = headers.findIndex((h) => h === 'price' || h === 'our price');
+  const nameCol         = headers.findIndex((h) => h === 'name');
+  const priceCol        = headers.findIndex((h) => h === 'price' || h === 'our price');
+  const scrapedPriceCol = headers.findIndex((h) => h === 'scraped price');
   // Use the rightmost "link" column (sheet may have multiple)
   const linkCol  = headers.map((h, i) => ({ h, i }))
     .filter(({ h }) => h === 'link')
@@ -82,11 +83,32 @@ async function readPriceSheet({ spreadsheetId, serviceAccountKeyFile, sheetName,
       if (!isNaN(parsed)) sheetPrice = parsed;
     }
 
+    let existingScrapedPrice = null;
+    // null  = empty / never scraped / connection error (retry eligible)
+    // 'ok'  = has a numeric price (skip on retry)
+    // 'members-only' = "Sign In" sentinel written by scraper (skip on retry)
+    // 'unavailable'  = "N/A" sentinel written by scraper (skip on retry)
+    let scrapedPriceStatus = null;
+    if (scrapedPriceCol !== -1 && row[scrapedPriceCol]) {
+      const raw = String(row[scrapedPriceCol]).trim();
+      const parsed = parseFloat(raw.replace(/[$,]/g, ''));
+      if (!isNaN(parsed)) {
+        existingScrapedPrice = parsed;
+        scrapedPriceStatus = 'ok';
+      } else if (/sign\s*in/i.test(raw)) {
+        scrapedPriceStatus = 'members-only';
+      } else if (/n\/a|unavailable/i.test(raw)) {
+        scrapedPriceStatus = 'unavailable';
+      }
+    }
+
     products.push({
       rowIndex: i + 1, // 1-based sheet row (header is row 1)
       name,
       link,
       sheetPrice,
+      existingScrapedPrice,
+      scrapedPriceStatus,
       source
     });
   }

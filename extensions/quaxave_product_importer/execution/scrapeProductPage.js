@@ -18,12 +18,18 @@
  */
 
 const puppeteer = require('puppeteer');
+const os = require('os');
+const path = require('path');
 
-const NAVIGATION_TIMEOUT = 45000;
-const IDLE_WAIT_MS = 3000;
+const NAVIGATION_TIMEOUT = 90000;
+const IDLE_WAIT_MS = 5000;
 
 async function scrapeProductPage(url) {
   const { PROXY_HOST, PROXY_PORT, PROXY_USER, PROXY_PASS } = process.env;
+
+  // Unique profile dir per invocation — prevents Akamai cookies from one
+  // product carrying over to the next via a shared browser profile.
+  const userDataDir = path.join(os.tmpdir(), `costco-scraper-${Date.now()}`);
 
   const args = [
     '--no-sandbox',
@@ -31,7 +37,7 @@ async function scrapeProductPage(url) {
     '--disable-blink-features=AutomationControlled',
     '--disable-infobars',
     '--window-size=1366,768',
-    `--user-data-dir=${require('os').tmpdir()}/costco-scraper-profile`,
+    `--user-data-dir=${userDataDir}`,
   ];
 
   if (PROXY_HOST && PROXY_PORT) {
@@ -60,7 +66,10 @@ async function scrapeProductPage(url) {
       Object.defineProperty(navigator, 'languages', { get: () => ['en-US', 'en'] });
     });
 
-    await page.goto(url, { waitUntil: 'networkidle2', timeout: NAVIGATION_TIMEOUT });
+    // Use 'load' (not 'networkidle2') so Puppeteer doesn't falsely resolve between
+    // Akamai JS challenge redirects — we rely on waitForSelector('h1') below to
+    // confirm the actual product page has loaded.
+    await page.goto(url, { waitUntil: 'load', timeout: NAVIGATION_TIMEOUT });
 
     // Dismiss OneTrust cookie banner if present
     try {
@@ -73,6 +82,15 @@ async function scrapeProductPage(url) {
 
     await page.waitForSelector('h1', { timeout: NAVIGATION_TIMEOUT });
     await new Promise((r) => setTimeout(r, IDLE_WAIT_MS));
+
+    // Wait for the price element to render — proxy latency and Akamai challenge
+    // cycles can significantly delay React hydration. 40s gives enough headroom
+    // for 3 challenge redirects + final page render on a slow residential IP.
+    try {
+      await page.waitForSelector('[data-testid="single-price-content"]', { timeout: 40000 });
+    } catch {
+      // Price element didn't appear — will try to extract anyway
+    }
 
     // Expand accordions (Product Details, Specifications, etc.)
     await page.evaluate(() => {
@@ -89,22 +107,50 @@ async function scrapeProductPage(url) {
     const data = await page.evaluate(() => {
       const name = document.querySelector('h1')?.textContent.trim() || null;
 
-      // Try automation-id first (most reliable), then fall back to MUI text search
+      // Price extraction using Costco's data-testid attributes (confirmed via DevTools).
+      // Structure: [data-testid="single-price-content"] contains currency + whole + decimal spans.
+      // Falls back to MUI text search only if data-testid elements are absent.
       let price = null;
-      const autoIdPriceEl = document.querySelector('[automation-id="product-price"]');
-      if (autoIdPriceEl) {
-        const m = autoIdPriceEl.textContent.replace(/,/g, '').match(/\d+\.\d{2}/);
-        if (m) price = parseFloat(m[0]);
+
+      // Members-only pages show "Sign In for Price" instead of a price — return null immediately.
+      // This text only appears in the product pricing area on restricted items.
+      const signInEl = document.querySelector('[data-testid*="sign-in-price"], [data-testid*="signin-price"], [data-testid*="signInForPrice"]');
+      const hasMembersOnlyText = /Sign\s+In\s+for\s+Price|Members\s+Only\s+Price/i.test(document.body.innerText);
+      if (signInEl || hasMembersOnlyText) {
+        return { name, price: null, itemNumber: `costco-${Date.now()}`, weight: null, imageUrls: [], features: [], membersOnly: true };
       }
+
+      const priceContentEl = document.querySelector('[data-testid="single-price-content"]');
+      if (priceContentEl) {
+        const raw = priceContentEl.textContent.replace(/,/g, '').trim();
+        // raw is something like "$18.99" or "$18" + superscript "99" → combine digits
+        const m = raw.match(/[\d]+\.[\d]{2}/) || raw.match(/\$([\d]+)/);
+        if (m) {
+          price = parseFloat(m[0].replace('$', ''));
+        } else {
+          // whole value and cents may be in separate spans with no dot between them
+          const whole = document.querySelector('[data-testid="Text_single-price-whole-value"]')?.textContent.trim();
+          const cents = document.querySelector('[data-testid="Text_single-price-decimal-value"]')?.textContent.trim();
+          if (whole) price = parseFloat(`${whole}.${cents || '00'}`);
+        }
+      }
+
       if (price === null) {
-        // Find deepest MUI leaf element whose own text starts with $ and is short
+        // MUI fallback: price >= $8 to exclude delivery fees ($3.00), not in shipping section
         const muiEls = Array.from(document.querySelectorAll('[class*="Mui"]'));
         const priceEl = muiEls.find((el) => {
           const t = el.textContent.trim();
           if (!/^\$[0-9]/.test(t)) return false;
-          // Prefer elements where the first price-like token is the whole short text
           const firstPrice = t.match(/^\$[\d,]+\.\d{2}/);
-          return firstPrice && firstPrice[0].length >= t.length - 1;
+          if (!firstPrice || firstPrice[0].length < t.length - 1) return false;
+          const val = parseFloat(firstPrice[0].replace(/[$,]/g, ''));
+          if (val < 8) return false;
+          let node = el.parentElement;
+          while (node && node !== document.body) {
+            if (/delivery|shipping|freight/i.test(node.textContent.slice(0, 60))) return false;
+            node = node.parentElement;
+          }
+          return true;
         });
         if (priceEl) {
           const m = priceEl.textContent.replace(/,/g, '').match(/\d+\.\d{2}/);
@@ -148,6 +194,8 @@ async function scrapeProductPage(url) {
     };
   } finally {
     if (browser) await browser.close();
+    // Clean up the temp profile dir so they don't accumulate
+    try { require('fs').rmSync(userDataDir, { recursive: true, force: true }); } catch {}
   }
 }
 

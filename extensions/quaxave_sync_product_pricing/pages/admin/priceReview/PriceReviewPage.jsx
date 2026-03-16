@@ -49,13 +49,17 @@ export default function PriceReviewPage({ pendingPriceChanges, approveUrl, dismi
     }
   };
 
-  const handleTrigger = async () => {
+  const handleTrigger = async (retryFailed = false) => {
     setScraping(true);
     try {
-      const res = await fetch(triggerUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' } });
+      const url = retryFailed ? `${triggerUrl}?retryFailed=true` : triggerUrl;
+      const res = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' } });
       const json = await res.json();
       if (!res.ok) throw new Error(json?.error?.message || 'Request failed');
-      toast.info('Scrape job started — results will appear here in ~6 minutes. Refresh the page when done.');
+      const msg = retryFailed
+        ? 'Retry-failed job started — only re-scraping rows without a price. Refresh when done.'
+        : 'Scrape job started — results will appear here in ~6 minutes. Refresh the page when done.';
+      toast.info(msg);
     } catch (err) {
       toast.error('Failed to start scrape: ' + err.message);
     } finally {
@@ -94,9 +98,12 @@ export default function PriceReviewPage({ pendingPriceChanges, approveUrl, dismi
 
   return (
     <div className="main-content-inner">
-      <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '1rem' }}>
-        <button className="button secondary" disabled={scraping} onClick={handleTrigger}>
-          {scraping ? 'Starting...' : 'Run Now'}
+      <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.5rem', marginBottom: '1rem' }}>
+        <button className="button secondary" disabled={scraping} onClick={() => handleTrigger(true)}>
+          {scraping ? 'Starting...' : 'Re-run failed'}
+        </button>
+        <button className="button secondary" disabled={scraping} onClick={() => handleTrigger(false)}>
+          {scraping ? 'Starting...' : 'Run Now (all)'}
         </button>
       </div>
       <PageHeading backUrl="/admin/products" heading="Price Review" />
