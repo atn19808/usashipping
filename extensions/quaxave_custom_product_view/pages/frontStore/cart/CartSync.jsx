@@ -45,8 +45,11 @@ export default function CartSync() {
         // Real navigation away — reset so next cart visit starts fresh
         _fetchDone = false;
         _syncDone = false;
+      } else {
+        // Our own fetchPageData completing — sync is done, clear the spinner signal
+        // before remount so ShoppingCart's useState initializer sees false
+        window.__qxvCartSyncing = false;
       }
-      // else: our own fetchPageData unmount — keep flags, new mount will skip
     };
   }, []);
 
@@ -87,6 +90,10 @@ export default function CartSync() {
       const hasRemovals = serverState.some(s => !localItems.find(i => i.sku === s.sku));
 
       if (needsSync || hasRemovals) {
+        // Signal to cart UI that sync is in progress
+        window.__qxvCartSyncing = true;
+        window.dispatchEvent(new CustomEvent('qxv:cart-syncing', { detail: { syncing: true } }));
+
         // Async sync — return early to avoid overwriting localStorage before sync completes.
         // After fetchPageData, stateCart updates and the mirror effect below runs.
         (async () => {

@@ -1,11 +1,12 @@
 import PropTypes from 'prop-types';
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import Area from '@components/common/Area';
 import { get } from '@evershop/evershop/src/lib/util/get';
 import { useAppState } from '@components/common/context/app';
 import Items from '@components/frontStore/checkout/cart/items/Items';
 import { Empty } from '@components/frontStore/checkout/cart/Empty';
 import { _ } from '@evershop/evershop/src/lib/locale/translate';
+import Spinner from '@components/common/Spinner';
 
 function Title({ title }) {
   const items = get(useAppState(), 'cart.items', []);
@@ -27,6 +28,30 @@ Title.propTypes = {
 
 export default function ShoppingCart({ cart, setting }) {
   const { totalQty = 0, items = [] } = cart || {};
+
+  // Show spinner while CartSync is syncing localStorage → server
+  const [cartSyncing, setCartSyncing] = useState(false);
+  useEffect(() => {
+    // Immediate check: localStorage has items but SSR cart is empty → sync is coming
+    try {
+      const localItems = JSON.parse(localStorage.getItem('qxv_local_cart') || '[]');
+      if (localItems.length > 0 && totalQty === 0) setCartSyncing(true);
+    } catch { /* ignore */ }
+    // Also listen for CartSync's runtime signal (covers partial-mismatch cases)
+    const handler = (e) => setCartSyncing(e.detail.syncing);
+    window.addEventListener('qxv:cart-syncing', handler);
+    return () => window.removeEventListener('qxv:cart-syncing', handler);
+  }, []);
+
+  if (cartSyncing) {
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '80px 0', gap: '16px' }}>
+        <Spinner width={40} height={40} />
+        <p style={{ color: '#666' }}>{_('Loading your cart...')}</p>
+      </div>
+    );
+  }
+
   if (totalQty <= 0) {
     return <Empty />;
   } else {
