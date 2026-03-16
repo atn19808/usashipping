@@ -46,9 +46,10 @@ export default function CartSync() {
         _fetchDone = false;
         _syncDone = false;
       } else {
-        // Our own fetchPageData completing — sync is done, clear the spinner signal
-        // before remount so ShoppingCart's useState initializer sees false
+        // Our own fetchPageData completing — signal ShoppingCart to clear its spinner.
+        // Dispatch the event while ShoppingCart is still mounted so its handler fires.
         window.__qxvCartSyncing = false;
+        window.dispatchEvent(new CustomEvent('qxv:cart-syncing', { detail: { syncing: false } }));
       }
     };
   }, []);

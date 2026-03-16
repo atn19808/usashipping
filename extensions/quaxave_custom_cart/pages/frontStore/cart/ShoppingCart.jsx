@@ -27,7 +27,11 @@ Title.propTypes = {
 };
 
 export default function ShoppingCart({ cart, setting }) {
-  const { totalQty = 0, items = [] } = cart || {};
+  // After CartSync calls fetchPageData, stateCart is the live AppState cart.
+  // The SSR `cart` prop stays at its initial value — use stateCart when available.
+  const stateCart = useAppState()?.cart;
+  const activeCart = stateCart ?? cart;
+  const { totalQty = 0, items = [] } = activeCart || {};
 
   // Show spinner while CartSync is syncing localStorage → server
   const [cartSyncing, setCartSyncing] = useState(false);
@@ -35,13 +39,23 @@ export default function ShoppingCart({ cart, setting }) {
     // Immediate check: localStorage has items but SSR cart is empty → sync is coming
     try {
       const localItems = JSON.parse(localStorage.getItem('qxv_local_cart') || '[]');
-      if (localItems.length > 0 && totalQty === 0) setCartSyncing(true);
+      // Use the initial SSR totalQty for this one-time check; stateCart isn't set yet
+      const ssrTotalQty = (cart || {}).totalQty ?? 0;
+      if (localItems.length > 0 && ssrTotalQty === 0) setCartSyncing(true);
     } catch { /* ignore */ }
     // Also listen for CartSync's runtime signal (covers partial-mismatch cases)
     const handler = (e) => setCartSyncing(e.detail.syncing);
     window.addEventListener('qxv:cart-syncing', handler);
     return () => window.removeEventListener('qxv:cart-syncing', handler);
   }, []);
+
+  // Belt-and-suspenders: clear spinner when live cart data arrives with items.
+  // Handles the case where the qxv:cart-syncing event was missed (e.g. timing edge cases).
+  useEffect(() => {
+    if (cartSyncing && totalQty > 0) {
+      setCartSyncing(false);
+    }
+  }, [totalQty]);
 
   if (cartSyncing) {
     return (
