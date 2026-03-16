@@ -95,34 +95,40 @@ export default function CartSync() {
         window.__qxvCartSyncing = true;
         window.dispatchEvent(new CustomEvent('qxv:cart-syncing', { detail: { syncing: true } }));
 
-        // Async sync — return early to avoid overwriting localStorage before sync completes.
-        // After fetchPageData, stateCart updates and the mirror effect below runs.
+        // Batch sync — single POST applies all changes in one DB transaction
+        // instead of N sequential requests. O(1) round trips vs O(N).
         (async () => {
           try {
-            await Promise.all(
-              serverState
-                .filter(s => !localItems.find(i => i.sku === s.sku))
-                .map(s => fetch(s.removeApi, { method: 'DELETE', credentials: 'same-origin' }).catch(() => {}))
-            );
-            for (const localItem of localItems) {
-              const serverItem = serverMap.get(localItem.sku);
-              if (!serverItem) {
-                await fetch('/api/cart/mine/items', {
-                  method: 'POST',
-                  headers: { 'Content-Type': 'application/json' },
-                  credentials: 'same-origin',
-                  body: JSON.stringify({ sku: localItem.sku, qty: localItem.qty }),
-                }).catch(() => {});
-              } else if (serverItem.qty !== localItem.qty) {
-                const delta = localItem.qty - serverItem.qty;
-                await fetch(serverItem.removeApi, {
-                  method: 'PATCH',
-                  headers: { 'Content-Type': 'application/json' },
-                  credentials: 'same-origin',
-                  body: JSON.stringify({ action: delta > 0 ? 'increase' : 'decrease', qty: Math.abs(delta) }),
-                }).catch(() => {});
-              }
-            }
+            const toDelete = serverState
+              .filter(s => !localItems.find(i => i.sku === s.sku))
+              .map(s => s.removeApi.split('/').pop()); // extract uuid from path
+
+            const toAdd = localItems
+              .filter(li => !serverMap.get(li.sku))
+              .map(li => ({ sku: li.sku, qty: li.qty }));
+
+            const toUpdate = localItems
+              .filter(li => {
+                const si = serverMap.get(li.sku);
+                return si && si.qty !== li.qty;
+              })
+              .map(li => {
+                const si = serverMap.get(li.sku);
+                const delta = li.qty - si.qty;
+                return {
+                  itemId: si.removeApi.split('/').pop(), // extract uuid from path
+                  qty: Math.abs(delta),
+                  action: delta > 0 ? 'increase' : 'decrease',
+                };
+              });
+
+            await fetch('/api/cart/mine/sync', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              credentials: 'same-origin',
+              body: JSON.stringify({ toDelete, toAdd, toUpdate }),
+            });
+
             const url = new URL(window.location.href);
             url.searchParams.set('ajax', true);
             _ownRefresh = true; // signal: the upcoming unmount is ours, don't reset flags
