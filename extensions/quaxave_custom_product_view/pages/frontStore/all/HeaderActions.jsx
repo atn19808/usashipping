@@ -65,11 +65,6 @@ export default function HeaderActions({
 
   const cartPath = (() => { try { return new URL(cartUrl).pathname; } catch { return cartUrl; } })();
 
-  const handleCartClick = (e) => {
-    e.preventDefault();
-    window.location.href = cartPath;
-  };
-
   const isLoggedIn = !!customer?.uuid;
   const userName = customer?.fullName?.split(' ').pop();
 
@@ -112,7 +107,6 @@ export default function HeaderActions({
       <a
         href={cartPath}
         className="hdr-action-btn hdr-cart-btn"
-        onClick={handleCartClick}
       >
         <span className="hdr-cart-icon-wrap">
           <BagIcon />
