@@ -26,18 +26,23 @@ const fs = require('fs');
 // first, then fall back to a standard system Chrome installation.
 function getChromePath() {
   if (process.env.PUPPETEER_EXECUTABLE_PATH) return process.env.PUPPETEER_EXECUTABLE_PATH;
-  try {
-    const p = puppeteer.executablePath();
-    if (fs.existsSync(p)) return p;
-  } catch { /* ignore */ }
-  const fallbacks = [
+  // Prefer stable system Chrome over puppeteer's bundled binary, which may be
+  // a canary build missing required runtime DLLs on some Windows machines.
+  const candidates = [
     'C:/Program Files/Google/Chrome/Application/chrome.exe',
     'C:/Program Files (x86)/Google/Chrome/Application/chrome.exe',
     '/usr/bin/google-chrome',
     '/usr/bin/chromium-browser',
     '/usr/bin/chromium',
   ];
-  return fallbacks.find(p => fs.existsSync(p)) ?? undefined;
+  const system = candidates.find(p => fs.existsSync(p));
+  if (system) return system;
+  // Fall back to puppeteer's bundled binary as last resort
+  try {
+    const p = puppeteer.executablePath();
+    if (fs.existsSync(p)) return p;
+  } catch { /* ignore */ }
+  return undefined;
 }
 
 const NAVIGATION_TIMEOUT = 90000;
