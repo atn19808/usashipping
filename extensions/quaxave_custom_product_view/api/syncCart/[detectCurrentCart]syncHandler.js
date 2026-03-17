@@ -9,22 +9,25 @@ const { pool } = require('@evershop/evershop/src/lib/postgres/connection');
 /**
  * POST /api/cart/mine/sync
  *
- * Applies a full cart diff in a single load → mutate → save cycle instead of
- * N sequential API calls. Reduces DB round trips from O(N) to O(1).
+ * Two calling modes:
  *
- * Body: {
- *   toDelete: string[],              // item UUIDs to remove
- *   toAdd:    { sku: string, qty: number }[],  // items to add
- *   toUpdate: { itemId: string, qty: number, action: 'increase'|'decrease' }[]
- * }
+ * 1. desiredState: [{ sku, qty }]
+ *    Client sends the full intended cart. Server loads current cart_items,
+ *    computes the diff, and applies it. Idempotent — safe to call repeatedly
+ *    (used by background sync on product pages).
+ *
+ * 2. Legacy diff: { toDelete, toAdd, toUpdate }
+ *    Client pre-computes the diff (requires knowing server item UUIDs).
+ *    Kept for backward compat but desiredState is preferred.
  */
 module.exports = async (request, response, delegate, next) => {
   try {
     const cartId = getContextValue(request, 'cartId');
+    const { desiredState, toDelete = [], toAdd = [], toUpdate = [] } = request.body || {};
 
-    const { toDelete = [], toAdd = [], toUpdate = [] } = request.body || {};
-
-    if (toDelete.length === 0 && toAdd.length === 0 && toUpdate.length === 0) {
+    // Nothing to do
+    const legacyEmpty = !desiredState && toDelete.length === 0 && toAdd.length === 0 && toUpdate.length === 0;
+    if (legacyEmpty) {
       response.status(OK);
       response.$body = { data: { success: true } };
       return next();
@@ -32,7 +35,6 @@ module.exports = async (request, response, delegate, next) => {
 
     let cart;
     if (!cartId) {
-      // No server cart yet — create one so toAdd items can be inserted
       const { sessionID, customer } = request.locals;
       cart = await createNewCart(sessionID, customer || {});
     } else {
@@ -44,18 +46,55 @@ module.exports = async (request, response, delegate, next) => {
       return next();
     }
 
+    let effectiveToDelete = toDelete;
+    let effectiveToAdd = toAdd;
+    let effectiveToUpdate = toUpdate;
+
+    if (desiredState) {
+      // Server-side diff: query current cart items then compute changes
+      const { rows: currentItems } = await pool.query(
+        'SELECT uuid, product_sku, qty FROM cart_item WHERE cart_id = $1',
+        [cart.getData('cart_id')]
+      );
+      const currentMap = new Map(currentItems.map(i => [i.product_sku, i]));
+      const desiredMap = new Map(desiredState.map(i => [i.sku, i]));
+
+      effectiveToDelete = currentItems
+        .filter(c => !desiredMap.has(c.product_sku))
+        .map(c => c.uuid);
+
+      effectiveToAdd = desiredState
+        .filter(d => !currentMap.has(d.sku))
+        .map(d => ({ sku: d.sku, qty: d.qty }));
+
+      effectiveToUpdate = desiredState
+        .filter(d => currentMap.has(d.sku) && currentMap.get(d.sku).qty !== d.qty)
+        .map(d => {
+          const current = currentMap.get(d.sku);
+          const delta = d.qty - current.qty;
+          return { itemId: current.uuid, qty: Math.abs(delta), action: delta > 0 ? 'increase' : 'decrease' };
+        });
+
+      // Truly nothing to do
+      if (effectiveToDelete.length === 0 && effectiveToAdd.length === 0 && effectiveToUpdate.length === 0) {
+        response.status(OK);
+        response.$body = { data: { success: true } };
+        return next();
+      }
+    }
+
     // Apply removals
-    for (const itemId of toDelete) {
+    for (const itemId of effectiveToDelete) {
       try { await cart.removeItem(itemId); } catch { /* item may already be gone */ }
     }
 
     // Apply qty updates
-    for (const { itemId, qty, action } of toUpdate) {
+    for (const { itemId, qty, action } of effectiveToUpdate) {
       try { await cart.updateItemQty(itemId, qty, action); } catch { /* ignore stale refs */ }
     }
 
-    // Apply additions — look up product_id by SKU for each new item
-    for (const { sku, qty } of toAdd) {
+    // Apply additions — look up product_id by SKU
+    for (const { sku, qty } of effectiveToAdd) {
       const product = await select()
         .from('product')
         .where('sku', '=', sku)
@@ -66,7 +105,6 @@ module.exports = async (request, response, delegate, next) => {
       }
     }
 
-    // Single save — one DB transaction for the entire diff
     await saveCart(cart);
 
     response.status(OK);

@@ -3,9 +3,11 @@
  *
  * Flow:
  *  1. Add/remove on product pages → instant localStorage update + CustomEvent
+ *     + debounced background sync to server (desiredState)
  *  2. Cart click → instant navigation (window.location.href)
- *  3. Cart page load → CartSync reads localStorage first, syncs to server if needed,
- *     then mirrors server state back to localStorage so badge stays in sync.
+ *  3. Cart page load → CartSync checks if server already matches localStorage.
+ *     If background sync already ran: no-op, no fetchPageData.
+ *     If not: syncs and calls fetchPageData as fallback.
  */
 import { useState, useEffect } from 'react';
 
@@ -32,6 +34,29 @@ export function cacheServerState(serverState) {
 export function getCart() { return load(); }
 export function getItemQty(sku) { return load().find(i => i.sku === sku)?.qty ?? 0; }
 
+// --- Background sync ---
+
+let _bgSyncTimer = null;
+
+function _doBackgroundSync() {
+  if (typeof window === 'undefined') return;
+  const items = load();
+  if (items.length === 0) return;
+  fetch('/api/cart/mine/sync', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'same-origin',
+    body: JSON.stringify({ desiredState: items.map(i => ({ sku: i.sku, qty: i.qty })) }),
+  }).catch(() => {}); // fire-and-forget
+}
+
+function _scheduleBgSync() {
+  clearTimeout(_bgSyncTimer);
+  _bgSyncTimer = setTimeout(_doBackgroundSync, 500);
+}
+
+// --- Cart mutations ---
+
 export function addItem(sku, productId) {
   const cart = load();
   const hit = cart.find(i => i.sku === sku);
@@ -39,14 +64,20 @@ export function addItem(sku, productId) {
     ? cart.map(i => i.sku === sku ? { ...i, qty: i.qty + 1 } : i)
     : [...cart, { sku, productId, qty: 1 }]
   );
+  _scheduleBgSync();
 }
 export function increaseItem(sku) {
   save(load().map(i => i.sku === sku ? { ...i, qty: i.qty + 1 } : i));
+  _scheduleBgSync();
 }
 export function decreaseItem(sku) {
   save(load().map(i => i.sku === sku ? { ...i, qty: i.qty - 1 } : i).filter(i => i.qty > 0));
+  _scheduleBgSync();
 }
-export function removeItem(sku) { save(load().filter(i => i.sku !== sku)); }
+export function removeItem(sku) {
+  save(load().filter(i => i.sku !== sku));
+  _scheduleBgSync();
+}
 export function clearCart() { save([]); }
 export function getTotalQty() { return load().reduce((s, i) => s + i.qty, 0); }
 
