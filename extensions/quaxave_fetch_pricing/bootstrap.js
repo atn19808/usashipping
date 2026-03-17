@@ -1,7 +1,3 @@
-const fetchRate = require('./jobs/fetchRate');
-
 module.exports = () => {
-    (async function init() {
-        await fetchRate();
-    })();
+    // No processors to register — fetchRate runs via the scheduled job in config/default.json
 };
