@@ -20,6 +20,25 @@
 const puppeteer = require('puppeteer');
 const os = require('os');
 const path = require('path');
+const fs = require('fs');
+
+// Puppeteer's auto-discovery can fail on Windows. Try the bundled cache path
+// first, then fall back to a standard system Chrome installation.
+function getChromePath() {
+  if (process.env.PUPPETEER_EXECUTABLE_PATH) return process.env.PUPPETEER_EXECUTABLE_PATH;
+  try {
+    const p = puppeteer.executablePath();
+    if (fs.existsSync(p)) return p;
+  } catch { /* ignore */ }
+  const fallbacks = [
+    'C:/Program Files/Google/Chrome/Application/chrome.exe',
+    'C:/Program Files (x86)/Google/Chrome/Application/chrome.exe',
+    '/usr/bin/google-chrome',
+    '/usr/bin/chromium-browser',
+    '/usr/bin/chromium',
+  ];
+  return fallbacks.find(p => fs.existsSync(p)) ?? undefined;
+}
 
 const NAVIGATION_TIMEOUT = 90000;
 const IDLE_WAIT_MS = 5000;
@@ -46,7 +65,7 @@ async function scrapeProductPage(url) {
 
   let browser;
   try {
-    browser = await puppeteer.launch({ headless: true, args });
+    browser = await puppeteer.launch({ headless: true, args, executablePath: getChromePath() });
 
     const page = await browser.newPage();
 
