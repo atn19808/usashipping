@@ -8,8 +8,9 @@ const toPath = url => { try { return new URL(url).pathname; } catch { return url
  * Keeps the header badge in sync with the server cart and handles the
  * localStorage → server forward sync on first cart page load.
  *
- * Uses stateCart from AppState (populated via SSR) instead of fetching
- * /api/cart/mine/items — zero extra network round trips on normal page load.
+ * Exports its own `query` so it receives `cart` as an SSR prop directly —
+ * useAppState().cart is undefined on initial load because cart:null is excluded
+ * from the serialized AppState. The SSR prop is always available.
  *
  * Module-level flags survive fetchPageData-caused remounts (the JS bundle is
  * NOT re-evaluated on AJAX navigation).
@@ -21,9 +22,13 @@ const toPath = url => { try { return new URL(url).pathname; } catch { return url
 let _syncDone = false;
 let _ownRefresh = false;
 
-export default function CartSync() {
+export default function CartSync({ cart: ssrCart }) {
+  // stateCart is undefined on initial load; populated by fetchPageData updates
   const stateCart = useAppState()?.cart;
   const AppContextDispatch = useAppDispatch();
+
+  // Use whichever is available: stateCart (post-fetchPageData) or ssrCart (initial SSR)
+  const currentCart = stateCart !== undefined ? stateCart : ssrCart;
 
   // Cleanup: reset flags on real navigation away; dispatch syncing-done on our own remount.
   useEffect(() => {
@@ -40,35 +45,42 @@ export default function CartSync() {
     };
   }, []);
 
-  // One-time forward sync: diff stateCart (SSR) vs localStorage → push if different.
-  // stateCart is undefined until AppState hydrates; null means server has no cart.
+  // One-time forward sync: diff currentCart (SSR prop) vs localStorage → push if different.
+  // currentCart is null when server has no cart, object when it does.
   useEffect(() => {
+    console.log('[CartSync] effect — _syncDone:', _syncDone, 'currentCart:', currentCart);
     if (_syncDone) return;
-    if (stateCart === undefined) return; // wait for AppState hydration
+    if (currentCart === undefined) { console.log('[CartSync] currentCart still undefined, waiting'); return; }
     _syncDone = true;
 
-    const serverItems = (stateCart?.items ?? []).map(i => ({
+    const serverItems = (currentCart?.items ?? []).map(i => ({
       sku: i.productSku,
       qty: i.qty,
       removeApi: toPath(i.removeApi),
     }));
 
     const localItems = getCart(); // READ BEFORE any writes
+    console.log('[CartSync] serverItems:', serverItems.length, 'localItems:', localItems.length);
 
     // Mirror server → localStorage and exit when no sync is needed
     const serverMap = new Map(serverItems.map(i => [i.sku, i]));
     const needsSync = localItems.some(li => { const si = serverMap.get(li.sku); return !si || si.qty !== li.qty; });
     const hasRemovals = serverItems.some(s => !localItems.find(i => i.sku === s.sku));
+    console.log('[CartSync] needsSync:', needsSync, 'hasRemovals:', hasRemovals);
 
     if (localItems.length === 0 || (!needsSync && !hasRemovals)) {
-      if (serverItems.length > 0 || (stateCart?.totalQty ?? 0) === 0) {
+      console.log('[CartSync] no sync needed — clearing spinner');
+      if (serverItems.length > 0 || (currentCart?.totalQty ?? 0) === 0) {
         save(serverItems.map(i => ({ sku: i.sku, qty: i.qty })));
         cacheServerState(serverItems);
       }
+      window.__qxvCartSyncing = false;
+      window.dispatchEvent(new CustomEvent('qxv:cart-syncing', { detail: { syncing: false } }));
       return;
     }
 
     // Sync needed — signal spinner and send batch request
+    console.log('[CartSync] sync needed — firing fetch');
     window.__qxvCartSyncing = true;
     window.dispatchEvent(new CustomEvent('qxv:cart-syncing', { detail: { syncing: true } }));
 
@@ -90,22 +102,35 @@ export default function CartSync() {
             return { itemId: si.removeApi.split('/').pop(), qty: Math.abs(delta), action: delta > 0 ? 'increase' : 'decrease' };
           });
 
+        console.log('[CartSync] toDelete:', toDelete, 'toAdd:', toAdd, 'toUpdate:', toUpdate);
         await fetch('/api/cart/mine/sync', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           credentials: 'same-origin',
           body: JSON.stringify({ toDelete, toAdd, toUpdate }),
         });
+        console.log('[CartSync] fetch done — calling fetchPageData');
 
         const url = new URL(window.location.href);
         url.searchParams.set('ajax', true);
         _ownRefresh = true;
         await AppContextDispatch.fetchPageData(url);
-      } catch (e) {
+
+        // fetchPageData resolved — clear spinner directly.
+        // The cleanup-based dispatch only fires on unmount which may not happen
+        // when fetchPageData re-renders the same route in place.
+        console.log('[CartSync] fetchPageData done — clearing spinner');
         _ownRefresh = false;
+        window.__qxvCartSyncing = false;
+        window.dispatchEvent(new CustomEvent('qxv:cart-syncing', { detail: { syncing: false } }));
+      } catch (e) {
+        console.error('[CartSync] sync failed:', e);
+        _ownRefresh = false;
+        window.__qxvCartSyncing = false;
+        window.dispatchEvent(new CustomEvent('qxv:cart-syncing', { detail: { syncing: false } }));
       }
     })();
-  }, [stateCart]);
+  }, [currentCart]);
 
   // Mirror server → localStorage after any fetchPageData (qty changes, removals, post-sync refresh)
   useEffect(() => {
@@ -129,3 +154,16 @@ export const layout = {
   areaId: 'content',
   sortOrder: 1,
 };
+
+export const query = `
+  query Query {
+    cart {
+      totalQty
+      items {
+        productSku
+        qty
+        removeApi
+      }
+    }
+  }
+`;

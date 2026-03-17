@@ -17,19 +17,21 @@ module.exports = async (request, response, delegate, next) => {
   try {
     validateDirective(url);
   } catch (e) {
-    return response.status(INVALID_PAYLOAD).json({
-      error: { status: INVALID_PAYLOAD, message: e.message }
-    });
+    response.status(INVALID_PAYLOAD);
+    response.$body = { error: { status: INVALID_PAYLOAD, message: e.message } };
+    return next();
   }
 
   // Step 2 — Scrape product page
   try {
     const productData = await scrapeProductPage(url);
-    return response.status(OK).json({ data: productData });
+    response.status(OK);
+    response.$body = { data: productData };
+    next();
   } catch (e) {
     console.error('[scrapeProductUrl] scrape failed:', e.message);
-    return response.status(INTERNAL_SERVER_ERROR).json({
-      error: { status: INTERNAL_SERVER_ERROR, message: e.message || 'Scrape failed' }
-    });
+    response.status(INTERNAL_SERVER_ERROR);
+    response.$body = { error: { status: INTERNAL_SERVER_ERROR, message: e.message || 'Scrape failed' } };
+    next();
   }
 };

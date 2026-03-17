@@ -2,6 +2,7 @@ const { OK, INTERNAL_SERVER_ERROR } = require('@evershop/evershop/src/lib/util/h
 const { getContextValue } = require('@evershop/evershop/src/modules/graphql/services/contextHelper');
 const { getCartByUUID } = require('@evershop/evershop/src/modules/checkout/services/getCartByUUID');
 const { saveCart } = require('@evershop/evershop/src/modules/checkout/services/saveCart');
+const { createNewCart } = require('@evershop/evershop/src/modules/checkout/services/createNewCart');
 const { select } = require('@evershop/postgres-query-builder');
 const { pool } = require('@evershop/evershop/src/lib/postgres/connection');
 
@@ -20,22 +21,27 @@ const { pool } = require('@evershop/evershop/src/lib/postgres/connection');
 module.exports = async (request, response, delegate, next) => {
   try {
     const cartId = getContextValue(request, 'cartId');
-    if (!cartId) {
-      response.status(OK).json({ data: { success: true } });
-      return;
-    }
 
     const { toDelete = [], toAdd = [], toUpdate = [] } = request.body || {};
 
     if (toDelete.length === 0 && toAdd.length === 0 && toUpdate.length === 0) {
-      response.status(OK).json({ data: { success: true } });
-      return;
+      response.status(OK);
+      response.$body = { data: { success: true } };
+      return next();
     }
 
-    const cart = await getCartByUUID(cartId);
+    let cart;
+    if (!cartId) {
+      // No server cart yet — create one so toAdd items can be inserted
+      const { sessionID, customer } = request.locals;
+      cart = await createNewCart(sessionID, customer || {});
+    } else {
+      cart = await getCartByUUID(cartId);
+    }
     if (!cart) {
-      response.status(OK).json({ data: { success: false, error: 'Cart not found' } });
-      return;
+      response.status(OK);
+      response.$body = { data: { success: false, error: 'Cart not found' } };
+      return next();
     }
 
     // Apply removals
@@ -67,8 +73,8 @@ module.exports = async (request, response, delegate, next) => {
     response.$body = { data: { success: true } };
     next();
   } catch (error) {
-    response.status(INTERNAL_SERVER_ERROR).json({
-      error: { status: INTERNAL_SERVER_ERROR, message: error.message }
-    });
+    response.status(INTERNAL_SERVER_ERROR);
+    response.$body = { error: { status: INTERNAL_SERVER_ERROR, message: error.message } };
+    next();
   }
 };

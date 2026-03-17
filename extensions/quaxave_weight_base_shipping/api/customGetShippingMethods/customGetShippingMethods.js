@@ -3,7 +3,8 @@ const { buildUrl } = require('@evershop/evershop/src/lib/router/buildUrl');
 const normalizePort = require('@evershop/evershop/bin/lib/normalizePort');
 const {
   OK,
-  INTERNAL_SERVER_ERROR
+  INTERNAL_SERVER_ERROR,
+  INVALID_PAYLOAD
 } = require('@evershop/evershop/src/lib/util/httpStatus');
 const { default: axios } = require('axios');
 const { select } = require('@evershop/postgres-query-builder');

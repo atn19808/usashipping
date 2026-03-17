@@ -29,9 +29,8 @@ module.exports = async (request, response, delegate, next) => {
     return next();
   }
 
-  const client = await pool.connect();
   try {
-    const result = await client.query(
+    const result = await pool.query(
       `UPDATE product_price_pending
           SET status='dismissed', resolved_at=NOW()
         WHERE id = ANY($1) AND status='pending'
@@ -49,7 +48,5 @@ module.exports = async (request, response, delegate, next) => {
     response.$body = { error: { status: 500, message: err.message } };
     response.status(INTERNAL_SERVER_ERROR);
     next();
-  } finally {
-    client.release();
   }
 };

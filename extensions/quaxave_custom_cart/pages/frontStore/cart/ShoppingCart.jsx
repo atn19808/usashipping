@@ -41,7 +41,8 @@ export default function ShoppingCart({ cart, setting }) {
       const localItems = JSON.parse(localStorage.getItem('qxv_local_cart') || '[]');
       // Use the initial SSR totalQty for this one-time check; stateCart isn't set yet
       const ssrTotalQty = (cart || {}).totalQty ?? 0;
-      if (localItems.length > 0 && ssrTotalQty === 0) setCartSyncing(true);
+      console.log('[ShoppingCart] localItems:', localItems.length, 'ssrTotalQty:', ssrTotalQty, 'cart prop:', cart);
+      if (localItems.length > 0 && ssrTotalQty === 0) { console.log('[ShoppingCart] showing spinner'); setCartSyncing(true); }
     } catch { /* ignore */ }
     // Also listen for CartSync's runtime signal (covers partial-mismatch cases)
     const handler = (e) => setCartSyncing(e.detail.syncing);
@@ -52,6 +53,7 @@ export default function ShoppingCart({ cart, setting }) {
   // Belt-and-suspenders: clear spinner when live cart data arrives with items.
   // Handles the case where the qxv:cart-syncing event was missed (e.g. timing edge cases).
   useEffect(() => {
+    console.log('[ShoppingCart] totalQty changed:', totalQty, 'stateCart:', stateCart, 'cartSyncing:', cartSyncing);
     if (cartSyncing && totalQty > 0) {
       setCartSyncing(false);
     }
@@ -159,14 +161,6 @@ export const query = `
           text
         }
         lineTotal {
-          value
-          text
-        }
-        lineTotal {
-          value
-          text
-        }
-        lineTotalInclTax {
           value
           text
         }
