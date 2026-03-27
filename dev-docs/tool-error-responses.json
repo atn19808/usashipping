@@ -1,0 +1,146 @@
+{
+    "get_customer": {
+        "errors": [
+            {
+                "scenario": "Database connection timeout",
+                "response": {
+                    "isError": true,
+                    "errorCategory": "transient",
+                    "isRetryable": true,
+                    "message": "Database connection timed out after 5000ms",
+                    "details": {
+                        "retry_after_ms": 2000
+                    }
+                }
+            },
+            {
+                "scenario": "Too many request per hour",
+                "response": {
+                    "isError": true,
+                    "errorCategory": "transient",
+                    "isRetryable": true,
+                    "message": "Only 10 requests are allowed per hour",
+                    "details": {
+                        "retry_after_ms": 3600000
+                    }
+                }
+            },
+            {
+                "scenario": "Invalid email format",
+                "response": {
+                    "isError": true,
+                    "errorCategory": "validation",
+                    "isRetryable": true,
+                    "message": "Retry with a valid email address following the format: [EMAIL_ADDRESS]",
+                    "details": {
+                        "provided_value": "<provided_value>",
+                        "expected_format": "user@domain.com"
+                    }
+                }
+            }
+        ]
+    },
+    "lookup_order": {
+        "errors": [
+            {
+                "scenario": "Wrong order id format",
+                "response": {
+                    "isError": true,
+                    "errorCategory": "validation",
+                    "isRetryable": true,
+                    "message": "Retry with a valid order id following the format: 123e4567-e89b-12d3-a456-426614174000",
+                    "details": {
+                        "provided_value": "<provided_value>",
+                        "expected_format": "123e4567-e89b-12d3-a456-426614174000"
+                    }
+                }
+            },
+            {
+                "scenario": "Returned order doesn't have all information",
+                "response": {
+                    "isError": true,
+                    "errorCategory": "business",
+                    "isRetryable": false,
+                    "message": "This order has been returned and doesn't have all information including shipping address, items purchased, and order status. Please contact customer support for more information",
+                    "details": {
+                        "escalate_to_human": true
+                    }
+                }
+            }
+        ]
+    },
+    "check_product_availability": {
+        "errors": [
+            {
+                "scenario": "Inventory service timeout",
+                "response": {
+                    "isError": true,
+                    "errorCategory": "transient",
+                    "isRetryable": true,
+                    "message": "Inventory service timeout. Please try again",
+                    "details": {
+                        "retry_after_ms": 2000
+                    }
+                }
+            },
+            {
+                "scenario": "Product id is not found in catalog",
+                "response": {
+                    "isError": true,
+                    "errorCategory": "validation",
+                    "isRetryable": false,
+                    "message": "This product is not found in catalog. Verify the product id and try again",
+                    "details": {
+                        "provided_value": "<provided_value>",
+                        "expected_format": "123e4567-e89b-12d3-a456-426614174000"
+                    }
+                }
+            }
+        ]
+    },
+    "process_refund": {
+        "errors": [
+            {
+                "scenario": "Multiple refund request on the same order",
+                "response": {
+                    "isError": true,
+                    "errorCategory": "business",
+                    "isRetryable": false,
+                    "message": "Multiple refund requests have been submitted for this order. Please contact customer support for more information",
+                    "details": {
+                        "escalate_to_human": true
+                    }
+                }
+            },
+            {
+                "scenario": "Refund amount exceed order total",
+                "response": {
+                    "isError": true,
+                    "errorCategory": "business",
+                    "isRetryable": true,
+                    "message": "Refund amount exceed order total. Please try again",
+                    "details": {
+                        "order_total": "<order_total>",
+                        "requested_amount": "<requested_amount>",
+                        "max_allowed_refund": "<max_allowed_refund>"
+                    }
+                }
+            },
+            {
+                "scenario": "Refund amount is more than 500",
+                "response": {
+                    "isError": true,
+                    "errorCategory": "permission",
+                    "isRetryable": false,
+                    "message": "Refund amount is more than 500. Please contact customer support for more information",
+                    "details": {
+                        "escalate_to_human": true,
+                        "order_total": "<order_total>",
+                        "requested_amount": "<requested_amount>",
+                        "max_allowed_refund": "500"
+                    }
+                }
+            }
+        ]
+    }
+}

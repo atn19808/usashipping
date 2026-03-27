@@ -47,7 +47,7 @@ function _doBackgroundSync() {
     headers: { 'Content-Type': 'application/json' },
     credentials: 'same-origin',
     body: JSON.stringify({ desiredState: items.map(i => ({ sku: i.sku, qty: i.qty })) }),
-  }).catch(() => {}); // fire-and-forget
+  }).catch((err) => { console.warn('[localCart] background sync failed:', err); });
 }
 
 function _scheduleBgSync() {
