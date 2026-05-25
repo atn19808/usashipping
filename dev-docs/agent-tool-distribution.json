@@ -1,0 +1,71 @@
+{
+    "agents": [
+        {
+            "role": "coordinator",
+            "tools": [
+                "Task"
+            ],
+            "reasoning": "Coordinator routes requests, never touches data directly"
+        },
+        {
+            "role": "order agent",
+            "tools": [
+                "lookup_order",
+                "get_customer"
+            ],
+            "tool_choice": {
+                "turn_1": {
+                    "type": "tool",
+                    "name": "get_customer"
+                },
+                "turn_2": {
+                    "type": "auto"
+                }
+            },
+            "reasoning": "Gets get_customer (prerequisite: must identify customer before looking up order) and lookup_order (core_function). Does NOT get process_refund because order investigation should never trigger a financial action"
+        },
+        {
+            "role": "inventory agent",
+            "tools": [
+                "check_product_availability"
+            ],
+            "tool_choice": {
+                "type": "tool",
+                "name": "check_product_availability"
+            },
+            "reasoning": "Inventory agent handles inventory-related requests"
+        },
+        {
+            "role": "refund agent",
+            "tools": [
+                "process_refund",
+                "lookup_order",
+                "get_customer"
+            ],
+            "tool_choice": {
+                "turn_1": {
+                    "type": "tool",
+                    "name": "get_customer"
+                },
+                "turn_2": {
+                    "type": "tool",
+                    "name": "lookup_order"
+                },
+                "turn_3": {
+                    "type": "auto"
+                }
+            },
+            "reasoning": "Refund agent handles refund requests"
+        }
+    ],
+    "anti-patterns": [
+        {
+            "description": "Give all tools to all agents",
+            "problem": [
+                "Tool selection degrades at ~18 tools",
+                "Order agent could accidentally process refund",
+                "Can't enforce prerequisites (e.g. get_customer before lookup_order)"
+            ]
+        }
+    ]
+}

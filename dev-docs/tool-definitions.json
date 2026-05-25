@@ -1,0 +1,145 @@
+{
+    "bad_examples": [
+        {
+            "name": "get_customer",
+            "description": "Get customer info",
+            "input_schema": {
+                "type": "object",
+                "properties": {
+                    "query": {
+                        "type": "string",
+                        "description": "Customer identifier"
+                    }
+                },
+                "required": [
+                    "query"
+                ]
+            }
+        },
+        {
+            "name": "lookup_order",
+            "description": "Get order by id",
+            "input_schema": {
+                "type": "object",
+                "properties": {
+                    "query": {
+                        "type": "string",
+                        "description": "Order ID"
+                    }
+                },
+                "required": [
+                    "query"
+                ]
+            }
+        },
+        {
+            "name": "check_product_availability",
+            "description": "Check if product is available",
+            "input_schema": {
+                "type": "object",
+                "properties": {
+                    "query": {
+                        "type": "string",
+                        "description": "Product ID"
+                    }
+                },
+                "required": [
+                    "query"
+                ]
+            }
+        },
+        {
+            "name": "process_refund",
+            "description": "Process a refund for an order",
+            "input_schema": {
+                "type": "object",
+                "properties": {
+                    "query": {
+                        "type": "string",
+                        "description": "Order ID"
+                    }
+                },
+                "required": [
+                    "query"
+                ]
+            }
+        }
+    ],
+    "good_examples": [
+        {
+            "name": "get_customer",
+            "description": "Look up a customer's profile by email address or customer UUID. Returns name, email, order history summary, and account status. Use this BEFORE lookup_order when the customer provides an email instead of an order ID. Returns empty object (not error) if no customer found",
+            "input_schema": {
+                "type": "object",
+                "properties": {
+                    "email": {
+                        "type": "string",
+                        "description": "Customer email address (e.g. user@example.com)"
+                    },
+                    "customer_id": {
+                        "type": "string",
+                        "description": "Customer UUID (e.g. 123e4567-e89b-12d3-a456-426614174000). Not to be confused with order ID"
+                    }
+                }
+            }
+        },
+        {
+            "name": "lookup_order",
+            "description": "Look up an order by order ID. Returns order details including customer information, items purchased, shipping address, and order status. Use this AFTER get_customer when the customer provides an order ID instead of an email address. Returns empty object (not error) if no order is found",
+            "input_schema": {
+                "type": "object",
+                "properties": {
+                    "order_id": {
+                        "type": "string",
+                        "description": "Order ID (e.g. 123e4567-e89b-12d3-a456-426614174000). Not to be confused with order number"
+                    }
+                },
+                "required": [
+                    "order_id"
+                ]
+            }
+        },
+        {
+            "name": "check_product_availability",
+            "description": "Check if a product is currently available for purchase. Use when a customer asks about product availability or stock status.",
+            "input_schema": {
+                "type": "object",
+                "properties": {
+                    "product_id": {
+                        "type": "string",
+                        "description": "Product ID (e.g. 123e4567-e89b-12d3-a456-426614174000). Not to be confused with product sku"
+                    }
+                },
+                "required": [
+                    "product_id"
+                ]
+            }
+        },
+        {
+            "name": "process_refund",
+            "description": "Process a refund for an order. Returns the updated order details including customer information, items purchased, shipping address, and order status. This action is irreversible. Only call after confirming the order exists via lookup_order and verifying refund eligibility",
+            "input_schema": {
+                "type": "object",
+                "properties": {
+                    "order_id": {
+                        "type": "string",
+                        "description": "Order ID (e.g. 123e4567-e89b-12d3-a456-426614174000). Not to be confused with order number"
+                    },
+                    "refund_amount": {
+                        "type": "number",
+                        "description": "Refund amount (e.g. 29.99). Use the full order total for a complete refund"
+                    },
+                    "reason": {
+                        "type": "string",
+                        "description": "Reason for refund (e.g. 'wrong size', 'damaged item', 'customer changed mind')"
+                    }
+                },
+                "required": [
+                    "order_id",
+                    "refund_amount",
+                    "reason"
+                ]
+            }
+        }
+    ]
+}
