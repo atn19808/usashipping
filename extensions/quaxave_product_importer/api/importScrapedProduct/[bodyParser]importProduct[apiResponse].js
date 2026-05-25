@@ -11,12 +11,12 @@ const downloadAndUploadImages = require('../../execution/downloadAndUploadImages
 const createEverShopProduct = require('../../execution/createEverShopProduct');
 
 module.exports = async (request, response, delegate, next) => {
-  const { name, price, weight, description, sku, imageUrls, url_key } = request.body || {};
+  const { name, price, weight, features, sku, imageUrls, url_key } = request.body || {};
 
   if (!name || price == null || !sku) {
-    return response.status(INVALID_PAYLOAD).json({
-      error: { status: INVALID_PAYLOAD, message: 'name, price, and sku are required' }
-    });
+    response.status(INVALID_PAYLOAD);
+    response.$body = { error: { status: INVALID_PAYLOAD, message: 'name, price, and sku are required' } };
+    return next();
   }
 
   try {
@@ -31,12 +31,13 @@ module.exports = async (request, response, delegate, next) => {
       sku,
       price,
       weight,
-      description,
+      features: Array.isArray(features) ? features : [],
       imageUrls: uploadedImageUrls,
       url_key
     });
 
-    return response.status(OK).json({
+    response.status(OK);
+    response.$body = {
       data: {
         ...product,
         links: [
@@ -48,11 +49,12 @@ module.exports = async (request, response, delegate, next) => {
           }
         ]
       }
-    });
+    };
+    next();
   } catch (e) {
     console.error('[importScrapedProduct] Error:', e.message);
-    return response.status(INTERNAL_SERVER_ERROR).json({
-      error: { status: INTERNAL_SERVER_ERROR, message: e.message || 'Import failed' }
-    });
+    response.status(INTERNAL_SERVER_ERROR);
+    response.$body = { error: { status: INTERNAL_SERVER_ERROR, message: e.message || 'Import failed' } };
+    next();
   }
 };

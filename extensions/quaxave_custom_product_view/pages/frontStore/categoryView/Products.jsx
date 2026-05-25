@@ -8,14 +8,13 @@ export default function Products({
   products: {
     showProducts,
     products: { items }
-  },
-  cart
+  }
 }) {
   if (!showProducts) {
     return null;
   }
 
-  const productsWithCartInfo = mapProductWithCart(items, cart);
+  const productsWithCartInfo = mapProductWithCart(items, null);
 
   return (
     <div>
@@ -64,15 +63,6 @@ Products.propTypes = {
       )
     }),
   }),
-  cart: PropTypes.shape({
-    items: PropTypes.arrayOf(
-      PropTypes.shape({
-        productId: PropTypes.string,
-        qty: PropTypes.number,
-        uuid: PropTypes.string,
-      })
-    )
-  })
 };
 
 Products.defaultProps = {
@@ -82,9 +72,6 @@ Products.defaultProps = {
       items: []
     }
   },
-  cart: {
-    items: []
-  }
 };
 
 export const layout = {
@@ -100,13 +87,6 @@ export const query = `
         items {
           ...Product
         }
-      }
-    }
-    cart {
-      items {
-        uuid
-        productId
-        qty
       }
     }
   }`;

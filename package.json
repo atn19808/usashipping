@@ -20,7 +20,10 @@
   "license": "UNLICENSED",
   "dependencies": {
     "@evershop/evershop": "1.2.2",
-    "@evershop/google_login": "^1.2.1"
+    "@evershop/google_login": "^1.2.1",
+    "cheerio": "^1.2.0",
+    "googleapis": "^171.4.0",
+    "puppeteer": "^24.39.0"
   },
   "devDependencies": {
     "patch-package": "^8.0.1"

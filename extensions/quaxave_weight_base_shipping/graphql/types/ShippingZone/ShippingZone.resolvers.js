@@ -6,6 +6,14 @@ const { buildUrl } = require('@evershop/evershop/src/lib/router/buildUrl');
 
 module.exports = {
   Query: {
+    weightBasedShippingRate: async () => {
+      const method = await select('weight_based_rate')
+        .from('shipping_zone_method')
+        .where('weight_based_rate', 'IS NOT NULL', null)
+        .and('is_enabled', '=', 't')
+        .load(pool);
+      return method ? parseFloat(method.weight_based_rate) : null;
+    },
     shippingZones: async () => {
       const shippingZones = await select()
         .from('shipping_zone')

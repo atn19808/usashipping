@@ -1,6 +1,6 @@
 const {
   setContextValue
-} = require('@evershop/evershop/src/lib/util/contextHelper');
+} = require('@evershop/evershop/src/modules/graphql/services/contextHelper');
 
 module.exports = (request, response) => {
   setContextValue(request, 'pageInfo', {

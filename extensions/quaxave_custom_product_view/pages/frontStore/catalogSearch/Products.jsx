@@ -4,8 +4,8 @@ import { _ } from '@evershop/evershop/src/lib/locale/translate';
 import ProductList from '../../../components/frontStore/productView/List';
 import mapProductWithCart from '../../../components/common/ProductUtil';
 
-export default function Products({ products: { items }, cart }) {
-  const productsWithCartInfo = mapProductWithCart(items, cart);
+export default function Products({ products: { items } }) {
+  const productsWithCartInfo = mapProductWithCart(items, null);
   return (
     <div>
       <ProductList products={productsWithCartInfo} countPerRow={4} />
@@ -25,11 +25,11 @@ Products.propTypes = {
         url: PropTypes.string,
         price: PropTypes.shape({
           regular: PropTypes.shape({
-            value: PropTypes.float,
+            value: PropTypes.number,
             text: PropTypes.string
           }),
           special: PropTypes.shape({
-            value: PropTypes.float,
+            value: PropTypes.number,
             text: PropTypes.string
           })
         }),
@@ -49,15 +49,6 @@ Products.propTypes = {
       })
     )
   }),
-  cart: PropTypes.shape({
-    items: PropTypes.arrayOf(
-      PropTypes.shape({
-        productId: PropTypes.string,
-        qty: PropTypes.number,
-        uuid: PropTypes.string,
-      })
-    )
-  })
 };
 
 Products.defaultProps = {
@@ -76,13 +67,6 @@ export const query = `
     products(filters: $filtersFromUrl) {
       items {
         ...Product
-      }
-    }
-    cart {
-      items {
-        uuid
-        productId
-        qty
       }
     }
   }`;

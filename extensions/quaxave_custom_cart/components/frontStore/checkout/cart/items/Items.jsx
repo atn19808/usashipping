@@ -6,26 +6,34 @@ import { _ } from '@evershop/evershop/src/lib/locale/translate';
 import ProductNoThumbnail from '@components/common/ProductNoThumbnail';
 import { ItemOptions } from '@evershop/evershop/src/components/frontStore/checkout/cart/items/ItemOptions';
 import { ItemVariantOptions } from '@evershop/evershop/src/components/frontStore/checkout/cart/items/ItemVariantOptions';
-import Quantity from '@evershop/evershop/src/components/frontStore/checkout/cart/items/Quantity';
+import CartQuantity from './CartQuantity';
+import { removeItem as removeLocalItem } from 'quaxave_custom_product_view/components/common/localCart';
 import './Items.scss';
 
 function Items({ items, setting: { priceIncludingTax } }) {
   const AppContextDispatch = useAppDispatch();
   const removeItem = async (item) => {
-    const response = await fetch(item.removeApi, {
-      method: 'DELETE',
-      headers: {
-        'Content-Type': 'application/json'
+    // Update localStorage immediately so badge drops at once and CartSync won't re-add
+    // the item if the user navigates away before fetchPageData completes.
+    removeLocalItem(item.productSku);
+    try {
+      const response = await fetch(item.removeApi, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
+      if (response.ok) {
+        const currentUrl = window.location.href;
+        const url = new URL(currentUrl, window.location.origin);
+        url.searchParams.set('ajax', true);
+        await AppContextDispatch.fetchPageData(url);
+      } else {
+        const data = await response.json();
+        toast(data.error.message);
       }
-    });
-    if (response.ok) {
-      const currentUrl = window.location.href;
-      const url = new URL(currentUrl, window.location.origin);
-      url.searchParams.set('ajax', true);
-      await AppContextDispatch.fetchPageData(url);
-    } else {
-      const data = await response.json();
-      toast(data.error.message);
+    } catch (e) {
+      toast(e.message);
     }
   };
 
@@ -132,7 +140,7 @@ function Items({ items, setting: { priceIncludingTax } }) {
                   </span>
                 </div>
                 <div className="md:hidden mt-2 flex justify-end">
-                  <Quantity qty={item.qty} api={item.updateQtyApi} />
+                  <CartQuantity qty={item.qty} api={item.updateQtyApi} sku={item.productSku} />
                 </div>
               </td>
               <td className="hidden md:table-cell">
@@ -143,7 +151,7 @@ function Items({ items, setting: { priceIncludingTax } }) {
                 </div>
               </td>
               <td className="hidden md:table-cell">
-                <Quantity qty={item.qty} api={item.updateQtyApi} />
+                <CartQuantity qty={item.qty} api={item.updateQtyApi} sku={item.productSku} />
               </td>
               <td className="hidden md:table-cell">
                 <span>

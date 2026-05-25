@@ -44,7 +44,13 @@ export function Total({ total, totalTaxAmount, priceIncludingTax }) {
 }
 
 Total.propTypes = {
-  total: PropTypes.string.isRequired,
-  totalTaxAmount: PropTypes.string.isRequired,
+  total: PropTypes.shape({
+    value: PropTypes.number,
+    text: PropTypes.string
+  }).isRequired,
+  totalTaxAmount: PropTypes.shape({
+    value: PropTypes.number,
+    text: PropTypes.string
+  }).isRequired,
   priceIncludingTax: PropTypes.bool.isRequired
 };

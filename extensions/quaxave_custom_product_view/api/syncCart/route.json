@@ -1,0 +1,5 @@
+{
+  "methods": ["POST"],
+  "path": "/cart/mine/sync",
+  "access": "public"
+}

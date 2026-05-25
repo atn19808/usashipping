@@ -57,11 +57,11 @@ export function CustomerAddressForm({
       props: {
         input: {
           fullNameLabel: _('Full name'),
-          fullName: address?.fullName,
+          fullName: address?.fullName ?? '',
           fullNameFieldName: 'full_name',
           fullNameFullFieldName: 'address[full_name]',
           telephoneLabel: _('Telephone'),
-          telephone: address?.telephone,
+          telephone: address?.telephone ?? '',
           telephoneFieldName: 'telephone',
           telephoneFullFieldName: 'address[telephone]'
         },
@@ -76,22 +76,22 @@ export function CustomerAddressForm({
   if (!isReceiverOnly) {
     const senderNameAndTelephone = {
       fullNameLabel: _('Sender Full name'),
-      fullName: address?.senderFullName,
+      fullName: address?.senderFullName ?? '',
       fullNameFieldName: 'sender_full_name',
       fullNameFullFieldName: 'address[sender_full_name]',
       telephoneLabel: _('Sender Telephone'),
-      telephone: address?.senderTelephone,
+      telephone: address?.senderTelephone ?? '',
       telephoneFieldName: 'sender_telephone',
       telephoneFullFieldName: 'address[sender_telephone]'
     };
 
     const receiverNameAndTelephone = {
       fullNameLabel: _('Receiver Full name'),
-      fullName: address?.fullName,
+      fullName: address?.fullName ?? '',
       fullNameFieldName: 'full_name',
       fullNameFullFieldName: 'address[full_name]',
       telephoneLabel: _('Receiver Telephone'),
-      telephone: address?.telephone,
+      telephone: address?.telephone ?? '',
       telephoneFieldName: 'telephone',
       telephoneFullFieldName: 'address[telephone]'
     };
@@ -131,7 +131,7 @@ export function CustomerAddressForm({
           props: {
             type: 'text',
             name: 'address[address_1]',
-            value: address?.address1,
+            value: address?.address1 ?? '',
             formId,
             label: _('Address'),
             placeholder: _('Address'),
@@ -155,7 +155,7 @@ export function CustomerAddressForm({
           props: {
             type: 'text',
             name: 'address[city]',
-            value: address?.city,
+            value: address?.city ?? '',
             label: _('City'),
             placeholder: _('City'),
             validationRules: isFieldRequired(customerAddressSchema, 'city')

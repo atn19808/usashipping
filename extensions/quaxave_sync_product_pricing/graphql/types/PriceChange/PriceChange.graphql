@@ -1,0 +1,19 @@
+type PriceChange {
+  id: Int!
+  sku: String!
+  source: String!
+  productName: String
+  scrapedPrice: Float
+  currentPrice: Float
+  sheetPrice: Float
+  costcoUrl: String
+  status: String!
+  scrapedAt: String!
+  resolvedAt: String
+  delta: Float
+  deltaPercent: Float
+}
+
+extend type Query {
+  pendingPriceChanges: [PriceChange]
+}

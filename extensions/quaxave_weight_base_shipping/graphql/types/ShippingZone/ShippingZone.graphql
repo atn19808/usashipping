@@ -54,4 +54,5 @@ type ShippingZone {
 extend type Query {
   shippingZones: [ShippingZone]
   shippingZone(id: String!): ShippingZone
+  weightBasedShippingRate: Float
 }

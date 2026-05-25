@@ -1,11 +1,12 @@
 import PropTypes from 'prop-types';
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import Area from '@components/common/Area';
 import { get } from '@evershop/evershop/src/lib/util/get';
 import { useAppState } from '@components/common/context/app';
 import Items from '@components/frontStore/checkout/cart/items/Items';
 import { Empty } from '@components/frontStore/checkout/cart/Empty';
 import { _ } from '@evershop/evershop/src/lib/locale/translate';
+import Spinner from '@components/common/Spinner';
 
 function Title({ title }) {
   const items = get(useAppState(), 'cart.items', []);
@@ -26,8 +27,47 @@ Title.propTypes = {
 };
 
 export default function ShoppingCart({ cart, setting }) {
-  const { totalQty = 0, items = [] } = cart || {};
-  console.log('items', JSON.stringify(items));
+  // After CartSync calls fetchPageData, stateCart is the live AppState cart.
+  // The SSR `cart` prop stays at its initial value — use stateCart when available.
+  const stateCart = useAppState()?.cart;
+  const activeCart = stateCart ?? cart;
+  const { totalQty = 0, items = [] } = activeCart || {};
+
+  // Show spinner while CartSync is syncing localStorage → server
+  const [cartSyncing, setCartSyncing] = useState(false);
+  useEffect(() => {
+    // Immediate check: localStorage has items but SSR cart is empty → sync is coming
+    try {
+      const localItems = JSON.parse(localStorage.getItem('qxv_local_cart') || '[]');
+      // Use the initial SSR totalQty for this one-time check; stateCart isn't set yet
+      const ssrTotalQty = (cart || {}).totalQty ?? 0;
+      console.log('[ShoppingCart] localItems:', localItems.length, 'ssrTotalQty:', ssrTotalQty, 'cart prop:', cart);
+      if (localItems.length > 0 && ssrTotalQty === 0) { console.log('[ShoppingCart] showing spinner'); setCartSyncing(true); }
+    } catch { /* ignore */ }
+    // Also listen for CartSync's runtime signal (covers partial-mismatch cases)
+    const handler = (e) => setCartSyncing(e.detail.syncing);
+    window.addEventListener('qxv:cart-syncing', handler);
+    return () => window.removeEventListener('qxv:cart-syncing', handler);
+  }, []);
+
+  // Belt-and-suspenders: clear spinner when live cart data arrives with items.
+  // Handles the case where the qxv:cart-syncing event was missed (e.g. timing edge cases).
+  useEffect(() => {
+    console.log('[ShoppingCart] totalQty changed:', totalQty, 'stateCart:', stateCart, 'cartSyncing:', cartSyncing);
+    if (cartSyncing && totalQty > 0) {
+      setCartSyncing(false);
+    }
+  }, [totalQty]);
+
+  if (cartSyncing) {
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '80px 0', gap: '16px' }}>
+        <Spinner width={40} height={40} />
+        <p style={{ color: '#666' }}>{_('Loading your cart...')}</p>
+      </div>
+    );
+  }
+
   if (totalQty <= 0) {
     return <Empty />;
   } else {
@@ -75,11 +115,15 @@ export default function ShoppingCart({ cart, setting }) {
 
 ShoppingCart.propTypes = {
   cart: PropTypes.shape({
-    uuid: PropTypes.string.isRequired
-  }).isRequired,
+    uuid: PropTypes.string
+  }),
   setting: PropTypes.shape({
     priceIncludingTax: PropTypes.bool
   }).isRequired
+};
+
+ShoppingCart.defaultProps = {
+  cart: null
 };
 
 export const layout = {
@@ -117,14 +161,6 @@ export const query = `
           text
         }
         lineTotal {
-          value
-          text
-        }
-        lineTotal {
-          value
-          text
-        }
-        lineTotalInclTax {
           value
           text
         }

@@ -1,7 +1,7 @@
 import PropTypes from 'prop-types';
 import React from 'react';
+import { _ } from '@evershop/evershop/src/lib/locale/translate';
 import { Discount } from '@components/frontStore/checkout/checkout/summary/cart/Discount';
-import { Shipping } from '@components/frontStore/checkout/checkout/summary/cart/Shipping';
 import { Subtotal } from '@components/frontStore/checkout/checkout/summary/cart/Subtotal';
 import { Tax } from '@components/frontStore/checkout/checkout/summary/cart/Tax';
 import { Total } from '@components/frontStore/checkout/checkout/summary/cart/Total';
@@ -29,7 +29,9 @@ function CartSummary({
       {!priceIncludingTax && <Tax amount={totalTaxAmount.text} />}
       <Discount code={coupon} discount={discountAmount.text} />
       <TotalWeight totalWeight={totalWeight} />
-      <Shipping method={shippingMethodName} cost={shippingFeeInclTax.text} />
+      {shippingFeeInclTax?.text && (
+        <div className="flex justify-between gap-12 mb-4"><div>{_('Shipping')}</div><div className="text-right">{shippingFeeInclTax.text}</div></div>
+      )}
       <Total
         totalTaxAmount={totalTaxAmount}
         total={grandTotal}

@@ -32,13 +32,8 @@ module.exports = async (request, response, delegate, next) => {
     }
 
     if (!country) {
-      response.status(INVALID_PAYLOAD);
-      response.json({
-        error: {
-          status: INVALID_PAYLOAD,
-          message: 'Shipping country is required'
-        }
-      });
+      response.status(OK);
+      response.json({ data: { methods: [] } });
       return;
     }
 

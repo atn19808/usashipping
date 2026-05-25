@@ -2,11 +2,12 @@
 import PropTypes from 'prop-types';
 import React from 'react';
 import produce from 'immer';
+import axios from 'axios';
 import { toast } from 'react-toastify';
-import { useClient } from 'urql';
 import CustomerAddressForm from '@components/frontStore/customer/address/addressForm/Index';
 import { Form } from '@components/common/form/Form';
 import { useCheckout } from '@components/common/context/checkout';
+import { useCheckoutStepsDispatch } from '@components/common/context/checkoutSteps';
 import { _ } from '@evershop/evershop/src/lib/locale/translate';
 import { AddressSummary } from '@components/common/customer/address/AddressSummary';
 
@@ -38,13 +39,14 @@ const QUERY = `
 
 export function StepContent({
   addShippingAddressApi,
+  addShippingMethodApi,
   shipmentInfo,
   setShipmentInfo,
   customerAddressSchema,
   addresses
 }) {
   const { cartId } = useCheckout();
-  const client = useClient();
+  const { completeStep } = useCheckoutStepsDispatch();
 
   React.useEffect(() => {
     // If shipping address is null, apply the default address if available
@@ -73,8 +75,8 @@ export function StepContent({
       <h4 className="mb-4 mt-12">{_('Shipping Address')}</h4>
       <div className="grid grid-cols-2 gap-5 mb-5">
         {addresses.map((address) => (
-          <div className="border rounded border-gray-300 p-5">
-            <AddressSummary key={address.uuid} address={address} isShowSender={true} />
+          <div key={address.uuid} className="border rounded border-gray-300 p-5">
+            <AddressSummary address={address} isShowSender={true} />
             <div className="flex justify-end gap-5">
               <a
                 href="#"
@@ -108,26 +110,59 @@ export function StepContent({
         id="checkoutShippingAddressForm"
         isJSON
         btnText={_('Continue to payment')}
-        onSuccess={(response) => {
+        onSuccess={async (response) => {
           if (!response.error) {
-            client
-              .query(QUERY, { cartId })
-              .toPromise()
-              .then((result) => {
-                const address = result.data.cart.shippingAddress;
-                setShipmentInfo(
-                  produce(shipmentInfo, (draff) => {
-                    draff.address = address;
-                  })
+            const gqlResp = await fetch('/api/graphql', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ query: QUERY, variables: { cartId } }),
+            });
+            const gqlJson = await gqlResp.json();
+            const address = gqlJson.data.cart.shippingAddress;
+            setShipmentInfo(
+              produce(shipmentInfo, (draff) => {
+                draff.address = address;
+              })
+            );
+
+            // Auto-save the first available shipping method
+            const country = address?.country?.code;
+            const province = address?.province?.code;
+            if (country && addShippingMethodApi) {
+              try {
+                const methodsResp = await axios.get(
+                  `/api/shippingMethods/${cartId}?country=${country}&province=${province || ''}`
                 );
-              });
+                const methods = methodsResp.data?.data?.methods || [];
+                if (methods.length > 0) {
+                  await axios.post(addShippingMethodApi, {
+                    method_code: methods[0].code,
+                    method_name: methods[0].name
+                  });
+                  window.dispatchEvent(
+                    new CustomEvent('shipping-cost-updated', {
+                      detail: { cost: methods[0].cost }
+                    })
+                  );
+                }
+              } catch (e) {
+                // best-effort
+              }
+            }
+
+            completeStep(
+              'shipment',
+              address
+                ? `${address.address1}, ${address.city}, ${address.country.name}`
+                : ''
+            );
           } else {
             toast.error(response.error.message);
           }
         }}
       >
         <CustomerAddressForm
-          areaId="checkoutShippingAddressForm"
+          areaId="checkoutShipmentForm"
           address={shipmentInfo.address}
           customerAddressSchema={customerAddressSchema}
         />
@@ -139,6 +174,7 @@ export function StepContent({
 
 StepContent.propTypes = {
   addShippingAddressApi: PropTypes.string.isRequired,
+  addShippingMethodApi: PropTypes.string,
   setShipmentInfo: PropTypes.func.isRequired,
   shipmentInfo: PropTypes.shape({
     address: PropTypes.shape({
@@ -171,27 +207,28 @@ StepContent.propTypes = {
   addresses: PropTypes.arrayOf(
     PropTypes.shape({
       uuid: PropTypes.string.isRequired,
-      senderFullName: PropTypes.string.isRequired,
-      senderTelephone: PropTypes.string.isRequired,
-      fullName: PropTypes.string.isRequired,
-      telephone: PropTypes.string.isRequired,
+      senderFullName: PropTypes.string,
+      senderTelephone: PropTypes.string,
+      fullName: PropTypes.string,
+      telephone: PropTypes.string,
       country: PropTypes.shape({
-        name: PropTypes.string.isRequired,
-        code: PropTypes.string.isRequired
+        name: PropTypes.string,
+        code: PropTypes.string
       }),
       province: PropTypes.shape({
         name: PropTypes.string,
         code: PropTypes.string
       }),
-      city: PropTypes.string.isRequired,
-      address1: PropTypes.string.isRequired,
-      postcode: PropTypes.string.isRequired,
-      isDefault: PropTypes.bool.isRequired
+      city: PropTypes.string,
+      address1: PropTypes.string,
+      postcode: PropTypes.string,
+      isDefault: PropTypes.bool
     })
   ).isRequired
 };
 
 StepContent.defaultProps = {
+  addShippingMethodApi: undefined,
   shipmentInfo: {
     address: {}
   }

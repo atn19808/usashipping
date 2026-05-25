@@ -1,12 +1,10 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import PropTypes from 'prop-types';
 import { _ } from '@evershop/evershop/src/lib/locale/translate';
 import Spinner from '@components/common/Spinner';
-import { useQuery } from 'urql';
 import './Total.scss';
 
-// TODO: currency pair should come from config
-const QUERY = `
+const FX_QUERY = `
   query Query($source: String, $target: String) {
     fxRate(source: $source, target: $target) {
       rate
@@ -14,98 +12,53 @@ const QUERY = `
   }
 `;
 
-
-function InternalTotal({priceIncludingTax, totalText}) {
-  console.log('totalText', totalText)
-  return priceIncludingTax ?
-    <div className="flex justify-between">
-      <div className="grand-total-value">
-        <span>{_('Total')}</span>
-      </div>
-      <div className="grand-total-value">{totalText}</div>
-    </div> :
-    <div className="flex justify-between">
-      <span className="self-center grand-total-value">{_('Total')}</span>
-    </div>;
-}
-
-function InternalTax({priceIncludingTax, totalTaxText}) {
-  return priceIncludingTax ?
-    <div className="flex justify-between">
-      <div>
-        <span className="italic">
-          ({_('Tax ${totalTaxText}', { totalTaxText })})
-        </span>
-      </div>
-    </div> :
-    null;
-}
-
-function InternalTotalVnd({priceIncludingTax, fetching, vndText}) {
-  return priceIncludingTax ?
-    <div className="flex justify-between">
-      <div>
-        <span>{'Thành tiền'}</span>
-      </div>
-      {(fetching && <div><Spinner width={25} height={25} /> </div>) || <div>{vndText}</div>}
-    </div> :
-    <div className="flex justify-between">
-      <span className="self-center grand-total-value">{_('Total')}</span>
-      {(fetching && <div><Spinner width={25} height={25} /> </div>) || <div>{vndText}</div>}
-    </div>;
-}
-
 export function Total(props) {
   const { total, totalTaxAmount, priceIncludingTax } = props;
 
-  let actualTotal = total;
+  let grandValue = total.value;
   if (priceIncludingTax) {
-    const valueWithTax = actualTotal.value + totalTaxAmount.value;
-    actualTotal = {
-      value: valueWithTax,
-      text: Intl.NumberFormat(
-        'en-US',
-        {
-          style: 'currency',
-          currency: 'USD',
-        }
-      ).format(valueWithTax)
-    }
+    grandValue += totalTaxAmount.value;
   }
+  const totalText = Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(grandValue);
 
-  const totalText = actualTotal.text;
-  const totalTaxText = totalTaxAmount.text;
-
-  const [result] = useQuery({
-    query: QUERY,
-    variables: {
-      source: "usd",
-      target: "vnd"
-    }
-  });
-  const { data, fetching, error: queryError } = result;
+  const [fxState, setFxState] = useState({ data: null, fetching: true, error: null });
+  useEffect(() => {
+    fetch('/api/graphql', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ query: FX_QUERY, variables: { source: 'usd', target: 'vnd' } }),
+    })
+      .then((r) => r.json())
+      .then((json) => {
+        setFxState({ data: json.data, fetching: false, error: json.errors?.[0] ?? null });
+      })
+      .catch((err) => {
+        setFxState({ data: null, fetching: false, error: err });
+      });
+  }, []);
+  const { data, fetching, error: queryError } = fxState;
 
   let vndText = '⚠️';
   if (queryError) {
     console.error(queryError);
   } else if (!fetching && data !== null && data.fxRate !== null) {
     const rate = data.fxRate.rate;
-    const vndValue = actualTotal.value * rate;
-    // TODO: check what browser compatile with API below
-    vndText = Intl.NumberFormat(
-      'vn-VN',
-      {
-        style: 'currency',
-        currency: 'VND',
-      }
-    ).format(vndValue);
+    const vndValue = grandValue * rate;
+    vndText = Intl.NumberFormat('vn-VN', { style: 'currency', currency: 'VND' }).format(vndValue);
   }
 
   return (
     <div className="summary-row-custom grand-total">
-      <InternalTotal priceIncludingTax={priceIncludingTax} totalText={totalText} />
-      <InternalTotalVnd priceIncludingTax={priceIncludingTax} fetching={fetching} vndText={vndText} />
-      <InternalTax priceIncludingTax={priceIncludingTax} totalTaxText={totalTaxText} />
+      <div className="flex justify-between">
+        <div className="grand-total-value">
+          <span>{_('Total')}</span>
+        </div>
+        <div className="grand-total-value">{totalText}</div>
+      </div>
+      <div className="flex justify-between">
+        <div><span>{'Thành tiền'}</span></div>
+        {(fetching && <div><Spinner width={25} height={25} /></div>) || <div>{vndText}</div>}
+      </div>
     </div>
   );
 }
@@ -119,10 +72,7 @@ Total.propTypes = {
     value: PropTypes.number,
     text: PropTypes.string
   }).isRequired,
-  priceIncludingTax: PropTypes.bool,
-  fxRate: PropTypes.shape({
-    rate: PropTypes.number.isRequired
-  })
+  priceIncludingTax: PropTypes.bool
 };
 
 Total.defaultProps = {

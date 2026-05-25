@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import PropTypes from 'prop-types';
 import { Card } from '@components/admin/cms/Card';
 import { Field } from '@components/common/form/Field';
@@ -8,7 +8,6 @@ import { Radio } from '@components/common/form/fields/Radio';
 import { Toggle } from '@components/common/form/fields/Toggle';
 import CreatableSelect from 'react-select/creatable';
 import Spinner from '@components/common/Spinner';
-import { useQuery } from 'urql';
 import { toast } from 'react-toastify';
 import PriceBasedPrice from '@components/admin/checkout/shippingSetting/PriceBasedPrice';
 import WeightBasedPrice from '@components/admin/checkout/shippingSetting/WeightBasedPrice';
@@ -117,9 +116,19 @@ function MethodForm({ saveMethodApi, closeModal, getZones, method }) {
   const [name, setName] = React.useState(method?.name || '');
   const [updatingName, setUpdatingName] = React.useState(false);
 
-  const [result, reexecuteQuery] = useQuery({
-    query: MethodsQuery
-  });
+  const [result, setResult] = useState({ data: null, fetching: true, error: null });
+  const [fetchTick, setFetchTick] = useState(0);
+  useEffect(() => {
+    setResult((s) => ({ ...s, fetching: true }));
+    fetch('/api/admin/graphql', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ query: MethodsQuery }),
+    })
+      .then((r) => r.json())
+      .then((json) => setResult({ data: json.data, fetching: false, error: json.errors?.[0] ?? null }))
+      .catch((err) => setResult({ data: null, fetching: false, error: err }));
+  }, [fetchTick]);
 
   const handleCreate = async (inputValue) => {
     setIsLoading(true);
@@ -133,7 +142,7 @@ function MethodForm({ saveMethodApi, closeModal, getZones, method }) {
         name: inputValue
       })
     });
-    reexecuteQuery({ requestPolicy: 'network-only' });
+    setFetchTick((t) => t + 1);
     setIsLoading(false);
   };
 

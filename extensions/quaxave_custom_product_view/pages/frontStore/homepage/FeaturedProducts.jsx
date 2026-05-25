@@ -1,44 +1,14 @@
 import React, { useState } from 'react';
 import PropTypes from 'prop-types';
-import { useQuery } from 'urql';
 import ProductList from '../../../components/frontStore/productView/List';
 import mapProductWithCart from '../../../components/common/ProductUtil';
 
 // ── Store config — add new stores here as you onboard them ──────────────────
 // `urlKey` must match the category url_key in the admin panel
-// `url`    is the "View all" category link
 const STORES = [
-  { urlKey: 'costco',  label: 'Costco',  url: '/costco'  },
-  { urlKey: 'walmart', label: 'Walmart', url: '/walmart' },
+  { urlKey: 'costco',  label: 'Costco'  },
+  { urlKey: 'walmart', label: 'Walmart' },
 ];
-
-const PRODUCT_FIELDS = `
-  uuid
-  productId
-  name
-  sku
-  price {
-    regular { value text }
-    special { value text }
-  }
-  weight { text }
-  image { alt url: listing }
-  url
-  inventory { isInStock stockAvailability manageStock }
-`;
-
-const STORE_QUERY = `
-  query StoreProducts($urlKey: String!) {
-    categoryByUrlKey(urlKey: $urlKey) {
-      products(filters: [{key: "limit", operation: eq, value: "20"}]) {
-        items { ${PRODUCT_FIELDS} }
-      }
-    }
-    cart {
-      items { uuid productId qty }
-    }
-  }
-`;
 
 function SkeletonGrid() {
   return (
@@ -50,23 +20,13 @@ function SkeletonGrid() {
   );
 }
 
-export default function FeaturedProducts({ category, cart: ssrCart }) {
+export default function FeaturedProducts({ costco, walmart }) {
   const [activeStore, setActiveStore] = useState(STORES[0].urlKey);
 
-  // Client-side fetch — fires on tab switch (and on mount to keep cart fresh)
-  const [{ data, fetching }] = useQuery({
-    query: STORE_QUERY,
-    variables: { urlKey: activeStore },
-  });
-
-  // Prefer live URQL data; fall back to SSR props only for the initial store
-  const items =
-    data?.categoryByUrlKey?.products?.items ??
-    (activeStore === STORES[0].urlKey ? category?.products?.items ?? [] : []);
-  const cart = data?.cart ?? ssrCart;
-  const products = mapProductWithCart(items, cart);
-
-  const activeStoreMeta = STORES.find((s) => s.urlKey === activeStore);
+  const storeData = { costco, walmart };
+  const current = storeData[activeStore];
+  const items = current?.products?.items ?? null;
+  const products = mapProductWithCart(items ?? [], null);
 
   return (
     <div className="store-tabs-section">
@@ -87,17 +47,12 @@ export default function FeaturedProducts({ category, cart: ssrCart }) {
               </button>
             ))}
           </nav>
-          {activeStoreMeta && (
-            <a href={activeStoreMeta.url} className="view-all-link">
-              Xem tất cả →
-            </a>
-          )}
         </div>
       </div>
 
       {/* ── Product grid ──────────────────────────────────────── */}
       <div className="page-width" style={{ paddingTop: '16px', paddingBottom: '32px' }}>
-        {fetching ? (
+        {items === null ? (
           <SkeletonGrid />
         ) : products.length === 0 ? (
           <p className="text-center" style={{ fontSize: '1.4rem', color: 'var(--color-text-muted)', padding: '40px 0' }}>
@@ -113,25 +68,13 @@ export default function FeaturedProducts({ category, cart: ssrCart }) {
 }
 
 FeaturedProducts.propTypes = {
-  category: PropTypes.shape({
-    products: PropTypes.shape({
-      items: PropTypes.array,
-    }),
-  }),
-  cart: PropTypes.shape({
-    items: PropTypes.arrayOf(
-      PropTypes.shape({
-        productId: PropTypes.string,
-        qty: PropTypes.number,
-        uuid: PropTypes.string,
-      })
-    ),
-  }),
+  costco: PropTypes.shape({ products: PropTypes.shape({ items: PropTypes.array }) }),
+  walmart: PropTypes.shape({ products: PropTypes.shape({ items: PropTypes.array }) }),
 };
 
 FeaturedProducts.defaultProps = {
-  category: { products: { items: [] } },
-  cart: { items: [] },
+  costco: null,
+  walmart: null,
 };
 
 export const layout = {
@@ -139,11 +82,13 @@ export const layout = {
   sortOrder: 15,
 };
 
-// SSR: pre-load the first store (Costco) so the page isn't blank on first paint
+// Both stores pre-loaded server-side — tab switching uses already-fetched data,
+// avoiding client-side HTTP requests that get blocked by the browser's
+// 6-connection HTTP/1.1 limit (all slots taken by webpack HMR SSE streams).
 export const query = `
-  query query {
-    category: categoryByUrlKey(urlKey: "costco") {
-      products(filters: [{key: "limit", operation: eq, value: "20"}]) {
+  query Query {
+    costco: categoryByUrlKey(urlKey: "costco") {
+      products(filters: [{key: "limit", operation: eq, value: "49"}]) {
         items {
           uuid
           productId
@@ -160,8 +105,23 @@ export const query = `
         }
       }
     }
-    cart {
-      items { uuid productId qty }
+    walmart: categoryByUrlKey(urlKey: "walmart") {
+      products(filters: [{key: "limit", operation: eq, value: "49"}]) {
+        items {
+          uuid
+          productId
+          name
+          sku
+          price {
+            regular { value text }
+            special { value text }
+          }
+          weight { text }
+          image { alt url: listing }
+          url
+          inventory { isInStock stockAvailability manageStock }
+        }
+      }
     }
   }
 `;

@@ -58,8 +58,29 @@ Discount.defaultProps = {
   coupon: ''
 };
 
+function Shipping({ shippingFeeInclTax }) {
+  return (
+    <div className="flex justify-between gap-12">
+      <div>{_('Shipping')}</div>
+      <div className="text-right">{shippingFeeInclTax?.text}</div>
+    </div>
+  );
+}
+
+Shipping.propTypes = {
+  shippingFeeInclTax: PropTypes.shape({
+    value: PropTypes.number,
+    text: PropTypes.string
+  })
+};
+
+Shipping.defaultProps = {
+  shippingFeeInclTax: { value: 0, text: '' }
+};
+
 function Summary({
   checkoutUrl,
+
   cart: {
     totalQty,
     totalWeight,
@@ -68,7 +89,8 @@ function Summary({
     totalTaxAmount,
     grandTotal,
     coupon,
-    discountAmount
+    discountAmount,
+    shippingFeeInclTax
   },
   setting: { priceIncludingTax }
 }) {
@@ -99,9 +121,8 @@ function Summary({
               id: 'shoppingCartDiscount'
             },
             {
-              // eslint-disable-next-line react/no-unstable-nested-components
               component: {
-                default: priceIncludingTax ? () => null : Tax
+                default: Tax
               },
               props: {
                 amount: totalTaxAmount.text
@@ -121,6 +142,12 @@ function Summary({
               id: 'shoppingCartTotalWeight'
             },
             {
+              component: { default: Shipping },
+              props: { shippingFeeInclTax },
+              sortOrder: 50,
+              id: 'shoppingCartShipping'
+            },
+            {
               // eslint-disable-next-line react/no-unstable-nested-components
               component: {
                 default: Total
@@ -128,7 +155,8 @@ function Summary({
               props: {
                 total: grandTotal,
                 totalTaxAmount: totalTaxAmount,
-                priceIncludingTax
+                priceIncludingTax,
+                totalWeight: totalWeight
               },
               sortOrder: 60,
               id: 'shoppingCartTotalPrice'
@@ -165,6 +193,10 @@ Summary.propTypes = {
       text: PropTypes.string
     }),
     discountAmount: PropTypes.shape({
+      value: PropTypes.number,
+      text: PropTypes.string
+    }),
+    shippingFeeInclTax: PropTypes.shape({
       value: PropTypes.number,
       text: PropTypes.string
     }),
@@ -213,6 +245,10 @@ export const query = `
         text
       }
       discountAmount {
+        value
+        text
+      }
+      shippingFeeInclTax {
         value
         text
       }

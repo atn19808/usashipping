@@ -1,67 +1,61 @@
 /**
- * Local cart — localStorage as source of truth, background sync to server.
+ * Local cart — localStorage as source of truth.
  *
  * Flow:
- *  1. Add/remove → instant localStorage update + CustomEvent
- *  2. 500ms after last cart change → background sync fires automatically
- *  3. Cart click → navigate immediately, sync runs in background
- *  4. Cart page calls waitForSync() to refresh once items land in DB
+ *  1. Add/remove on product pages → instant localStorage update + CustomEvent
+ *     + debounced background sync to server (desiredState)
+ *  2. Cart click → instant navigation (window.location.href)
+ *  3. Cart page load → CartSync checks if server already matches localStorage.
+ *     If background sync already ran: no-op, no fetchPageData.
+ *     If not: syncs and calls fetchPageData as fallback.
  */
 import { useState, useEffect } from 'react';
 
 const STORAGE_KEY = 'qxv_local_cart';
-const SYNCED_KEY  = 'qxv_cart_synced';
+const SERVER_STATE_KEY = 'qxv_server_state';
 const EVENT = 'local-cart-updated';
-
-let _debounceTimer = null;
-let _syncPromise   = null;
-
-function _cartHash(items) {
-  return items.map(i => `${i.sku}:${i.qty}`).sort().join('|');
-}
-function _isSynced(items) {
-  try { return sessionStorage.getItem(SYNCED_KEY) === _cartHash(items); }
-  catch { return false; }
-}
-function _markSynced(items) {
-  try { sessionStorage.setItem(SYNCED_KEY, _cartHash(items)); } catch {}
-}
-async function _doSync(items) {
-  if (!items.length) { _markSynced(items); return; }
-  await Promise.allSettled(
-    items.map(item => fetch('/api/cart/mine/items', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ sku: item.sku, qty: item.qty }),
-      credentials: 'same-origin',
-    }))
-  );
-  _markSynced(items);
-}
-function _scheduleSync() {
-  if (_debounceTimer) clearTimeout(_debounceTimer);
-  _debounceTimer = setTimeout(() => {
-    _debounceTimer = null;
-    const items = load();
-    if (!_isSynced(items)) {
-      _syncPromise = _doSync(items).finally(() => { _syncPromise = null; });
-    }
-  }, 500);
-}
 
 function load() {
   if (typeof window === 'undefined') return [];
   try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || []; }
   catch { return []; }
 }
-function save(items) {
+
+export function save(items) {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
   window.dispatchEvent(new CustomEvent(EVENT, { detail: items }));
-  _scheduleSync();
+}
+
+/** Called by CartSync on cart page load to cache server item removeApis. */
+export function cacheServerState(serverState) {
+  localStorage.setItem(SERVER_STATE_KEY, JSON.stringify(serverState));
 }
 
 export function getCart() { return load(); }
 export function getItemQty(sku) { return load().find(i => i.sku === sku)?.qty ?? 0; }
+
+// --- Background sync ---
+
+let _bgSyncTimer = null;
+
+function _doBackgroundSync() {
+  if (typeof window === 'undefined') return;
+  const items = load();
+  if (items.length === 0) return;
+  fetch('/api/cart/mine/sync', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'same-origin',
+    body: JSON.stringify({ desiredState: items.map(i => ({ sku: i.sku, qty: i.qty })) }),
+  }).catch((err) => { console.warn('[localCart] background sync failed:', err); });
+}
+
+function _scheduleBgSync() {
+  clearTimeout(_bgSyncTimer);
+  _bgSyncTimer = setTimeout(_doBackgroundSync, 500);
+}
+
+// --- Cart mutations ---
 
 export function addItem(sku, productId) {
   const cart = load();
@@ -70,14 +64,20 @@ export function addItem(sku, productId) {
     ? cart.map(i => i.sku === sku ? { ...i, qty: i.qty + 1 } : i)
     : [...cart, { sku, productId, qty: 1 }]
   );
+  _scheduleBgSync();
 }
 export function increaseItem(sku) {
   save(load().map(i => i.sku === sku ? { ...i, qty: i.qty + 1 } : i));
+  _scheduleBgSync();
 }
 export function decreaseItem(sku) {
   save(load().map(i => i.sku === sku ? { ...i, qty: i.qty - 1 } : i).filter(i => i.qty > 0));
+  _scheduleBgSync();
 }
-export function removeItem(sku) { save(load().filter(i => i.sku !== sku)); }
+export function removeItem(sku) {
+  save(load().filter(i => i.sku !== sku));
+  _scheduleBgSync();
+}
 export function clearCart() { save([]); }
 export function getTotalQty() { return load().reduce((s, i) => s + i.qty, 0); }
 
@@ -85,25 +85,14 @@ export function useLocalCart() {
   const [cart, setCart] = useState(load);
   useEffect(() => {
     const handler = e => setCart(e.detail);
+    // Re-read localStorage when page is restored from bfcache (back/forward nav)
+    const onPageShow = (e) => { if (e.persisted) setCart(load()); };
     window.addEventListener(EVENT, handler);
-    return () => window.removeEventListener(EVENT, handler);
+    window.addEventListener('pageshow', onPageShow);
+    return () => {
+      window.removeEventListener(EVENT, handler);
+      window.removeEventListener('pageshow', onPageShow);
+    };
   }, []);
   return cart;
-}
-
-/** Resolves when any in-progress sync finishes (or immediately if none pending) */
-export function waitForSync() {
-  return _syncPromise || Promise.resolve();
-}
-
-/** Await sync, clear localStorage, then navigate — cart page renders correct state in one load. */
-export async function syncAndNavigate(destUrl) {
-  const items = load();
-  if (items.length && !_isSynced(items)) {
-    if (_debounceTimer) { clearTimeout(_debounceTimer); _debounceTimer = null; }
-    if (!_syncPromise) _syncPromise = _doSync(items).finally(() => { _syncPromise = null; });
-    await _syncPromise;
-  }
-  clearCart();
-  window.location.href = destUrl;
 }

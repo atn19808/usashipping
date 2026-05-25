@@ -1,6 +1,5 @@
 import PropTypes from 'prop-types';
-import React from 'react';
-import { useQuery } from 'urql';
+import React, { useCallback, useEffect, useState } from 'react';
 import { Card } from '@components/admin/cms/Card';
 import SettingMenu from '@components/admin/setting/SettingMenu';
 import Button from '@components/common/form/Button';
@@ -82,15 +81,28 @@ const ZonesQuery = `
   }
 `;
 
+function useFetch(query, variables) {
+  const [state, setState] = useState({ data: null, fetching: true, error: null });
+  const [tick, setTick] = useState(0);
+  useEffect(() => {
+    setState((s) => ({ ...s, fetching: true }));
+    fetch('/api/admin/graphql', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ query, variables }),
+    })
+      .then((r) => r.json())
+      .then((json) => setState({ data: json.data, fetching: false, error: json.errors?.[0] ?? null }))
+      .catch((err) => setState({ data: null, fetching: false, error: err }));
+  }, [tick]);
+  const refetch = useCallback(() => setTick((t) => t + 1), []);
+  return [state, refetch];
+}
+
 export default function ShippingSetting({ createShippingZoneApi }) {
   const modal = useModal();
-  const [countriesQueryData] = useQuery({
-    query: CountriesQuery
-  });
-
-  const [zonesQueryData, reexecuteQuery] = useQuery({
-    query: ZonesQuery
-  });
+  const [countriesQueryData] = useFetch(CountriesQuery);
+  const [zonesQueryData, reexecuteQuery] = useFetch(ZonesQuery);
 
   return (
     <div className="main-content-inner">
@@ -124,14 +136,7 @@ export default function ShippingSetting({ createShippingZoneApi }) {
                 <Zones
                   zones={zonesQueryData.data.shippingZones}
                   countries={countriesQueryData.data.countries}
-                  getZones={() => {
-                    reexecuteQuery(
-                      {
-                        requestPolicy: 'network-only'
-                      },
-                      false
-                    );
-                  }}
+                  getZones={reexecuteQuery}
                 />
               )}
               <Card.Session>

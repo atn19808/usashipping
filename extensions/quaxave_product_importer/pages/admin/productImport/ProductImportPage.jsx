@@ -12,7 +12,7 @@ export default function ProductImportPage({ scrapeUrl, importUrl, productGridUrl
   const [editName, setEditName] = useState('');
   const [editPrice, setEditPrice] = useState('');
   const [editWeight, setEditWeight] = useState('');
-  const [editDescription, setEditDescription] = useState('');
+  const [editFeatures, setEditFeatures] = useState([]);
   const [editSku, setEditSku] = useState('');
   const [editImageUrls, setEditImageUrls] = useState([]);
 
@@ -36,7 +36,7 @@ export default function ProductImportPage({ scrapeUrl, importUrl, productGridUrl
       setEditName(data.name || '');
       setEditPrice(String(data.price || ''));
       setEditWeight(String(data.weight || ''));
-      setEditDescription(data.description || '');
+      setEditFeatures(data.features || []);
       setEditSku(data.itemNumber || '');
       setEditImageUrls(data.imageUrls || []);
       setPhase('preview');
@@ -57,7 +57,7 @@ export default function ProductImportPage({ scrapeUrl, importUrl, productGridUrl
           name: editName,
           price: parseFloat(editPrice),
           weight: parseFloat(editWeight) || 0,
-          description: editDescription,
+          features: editFeatures,
           sku: editSku,
           imageUrls: editImageUrls
         })
@@ -164,12 +164,16 @@ export default function ProductImportPage({ scrapeUrl, importUrl, productGridUrl
                 </div>
               </div>
               <div className="mt-4">
-                <label className="block font-medium mb-1">Description</label>
+                <label className="block font-medium mb-1">Features (one per line)</label>
                 <textarea
                   className="form-control w-full"
                   rows={6}
-                  value={editDescription}
-                  onChange={(e) => setEditDescription(e.target.value)}
+                  value={editFeatures.join('\n')}
+                  onChange={(e) =>
+                    setEditFeatures(
+                      e.target.value.split('\n').map((s) => s.trimEnd()).filter((s) => s.length > 0)
+                    )
+                  }
                 />
               </div>
             </Card.Session>

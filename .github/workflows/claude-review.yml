@@ -1,0 +1,19 @@
+name: Claude PR Review
+on:
+  pull_request:
+    branches: [an_dev]
+
+jobs:
+  review:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Review PR with Claude
+        run: |
+          DIFF=$(git diff origin/an_dev...HEAD)
+          RESULT=$(echo "$DIFF" | claude -p "Review this diff for EverShop conventions" --output-format json)
+          if echo "$RESULT" | jq -e '[.[] | select(.severity == "error")] | length > 0' > /dev/null; then
+            exit 1
+          fi

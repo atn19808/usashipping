@@ -1,8 +1,10 @@
 'use strict';
 
 /**
- * Execution: Scrape Costco Product Page
+ * Execution: Scrape Costco Product Page via Puppeteer + residential proxy
  * Directive ref: directives/import_costco_product.md — Step 2
+ *
+ * Requires: PROXY_HOST, PROXY_PORT, PROXY_USER, PROXY_PASS env vars
  *
  * @param {string} url  Validated Costco product page URL
  * @returns {Promise<{
@@ -10,32 +12,72 @@
  *   price: number|null,
  *   itemNumber: string,
  *   weight: number|null,
- *   description: string,
+ *   features: string[],
  *   imageUrls: string[]
  * }>}
  */
 
 const puppeteer = require('puppeteer');
+const os = require('os');
+const path = require('path');
+const fs = require('fs');
 
-const NAVIGATION_TIMEOUT = 45000;
-const IDLE_WAIT_MS = 3000;
+// Puppeteer's auto-discovery can fail on Windows. Try the bundled cache path
+// first, then fall back to a standard system Chrome installation.
+function getChromePath() {
+  if (process.env.PUPPETEER_EXECUTABLE_PATH) return process.env.PUPPETEER_EXECUTABLE_PATH;
+  // Prefer stable system Chrome over puppeteer's bundled binary, which may be
+  // a canary build missing required runtime DLLs on some Windows machines.
+  const candidates = [
+    'C:/Program Files/Google/Chrome/Application/chrome.exe',
+    'C:/Program Files (x86)/Google/Chrome/Application/chrome.exe',
+    '/usr/bin/google-chrome',
+    '/usr/bin/chromium-browser',
+    '/usr/bin/chromium',
+  ];
+  const system = candidates.find(p => fs.existsSync(p));
+  if (system) return system;
+  // Fall back to puppeteer's bundled binary as last resort
+  try {
+    const p = puppeteer.executablePath();
+    if (fs.existsSync(p)) return p;
+  } catch { /* ignore */ }
+  return undefined;
+}
+
+const NAVIGATION_TIMEOUT = 90000;
+const IDLE_WAIT_MS = 5000;
 
 async function scrapeProductPage(url) {
+  const { PROXY_HOST, PROXY_PORT, PROXY_USER, PROXY_PASS } = process.env;
+
+  // Unique profile dir per invocation — prevents Akamai cookies from one
+  // product carrying over to the next via a shared browser profile.
+  const userDataDir = path.join(os.tmpdir(), `costco-scraper-${Date.now()}`);
+
+  const args = [
+    '--no-sandbox',
+    '--disable-setuid-sandbox',
+    '--disable-blink-features=AutomationControlled',
+    '--disable-infobars',
+    '--window-size=1366,768',
+    `--user-data-dir=${userDataDir}`,
+  ];
+
+  if (PROXY_HOST && PROXY_PORT) {
+    args.push(`--proxy-server=${PROXY_HOST}:${PROXY_PORT}`);
+  }
+
   let browser;
   try {
-    browser = await puppeteer.launch({
-      headless: 'new',
-      args: [
-        '--no-sandbox',
-        '--disable-setuid-sandbox',
-        '--disable-blink-features=AutomationControlled',
-        '--disable-infobars',
-        '--window-size=1366,768',
-        '--user-data-dir=/tmp/costco-scraper-profile'
-      ]
-    });
+    browser = await puppeteer.launch({ headless: true, args, executablePath: getChromePath() });
 
     const page = await browser.newPage();
+
+    if (PROXY_USER && PROXY_PASS) {
+      await page.authenticate({ username: PROXY_USER, password: PROXY_PASS });
+    }
+
     await page.setViewport({ width: 1366, height: 768 });
     await page.setUserAgent(
       'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 ' +
@@ -48,7 +90,10 @@ async function scrapeProductPage(url) {
       Object.defineProperty(navigator, 'languages', { get: () => ['en-US', 'en'] });
     });
 
-    await page.goto(url, { waitUntil: 'networkidle2', timeout: NAVIGATION_TIMEOUT });
+    // Use 'load' (not 'networkidle2') so Puppeteer doesn't falsely resolve between
+    // Akamai JS challenge redirects — we rely on waitForSelector('h1') below to
+    // confirm the actual product page has loaded.
+    await page.goto(url, { waitUntil: 'load', timeout: NAVIGATION_TIMEOUT });
 
     // Dismiss OneTrust cookie banner if present
     try {
@@ -59,68 +104,108 @@ async function scrapeProductPage(url) {
       // No banner — continue
     }
 
-    // Wait for the product title H1 to confirm page loaded
     await page.waitForSelector('h1', { timeout: NAVIGATION_TIMEOUT });
     await new Promise((r) => setTimeout(r, IDLE_WAIT_MS));
 
-    // Expand all accordions (Product Details, Specifications, etc.)
+    // Wait for the price element to render — proxy latency and Akamai challenge
+    // cycles can significantly delay React hydration. 40s gives enough headroom
+    // for 3 challenge redirects + final page render on a slow residential IP.
+    try {
+      await page.waitForSelector('[data-testid="single-price-content"]', { timeout: 40000 });
+    } catch {
+      // Price element didn't appear — will try to extract anyway
+    }
+
+    // Expand accordions (Product Details, Specifications, etc.)
     await page.evaluate(() => {
       document.querySelectorAll('[class*="MuiAccordion"] button[aria-expanded="false"]').forEach((btn) => btn.click());
     });
     await new Promise((r) => setTimeout(r, 1500));
 
+    // Scroll through the page to trigger lazy-loaded carousel images
+    await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight / 2));
+    await new Promise((r) => setTimeout(r, 1000));
+    await page.evaluate(() => window.scrollTo(0, 0));
+    await new Promise((r) => setTimeout(r, 500));
+
     const data = await page.evaluate(() => {
-      // --- Name ---
       const name = document.querySelector('h1')?.textContent.trim() || null;
 
-      // --- Price ---
-      // Find the first MUI element whose text starts with "$NN.NN"
-      const priceEl = Array.from(document.querySelectorAll('[class*="Mui"]'))
-        .find((el) => /^\$[0-9]/.test(el.textContent.trim()) && el.textContent.trim().length < 20);
-      const priceRaw = priceEl ? priceEl.textContent.trim() : '';
-      const priceMatch = priceRaw.replace(/,/g, '').match(/\d+\.\d{2}/);
-      const price = priceMatch ? parseFloat(priceMatch[0]) : null;
+      // Price extraction using Costco's data-testid attributes (confirmed via DevTools).
+      // Structure: [data-testid="single-price-content"] contains currency + whole + decimal spans.
+      // Falls back to MUI text search only if data-testid elements are absent.
+      let price = null;
 
-      // --- Item Number ---
-      // Extract from body text: "Item #XXXXXX" pattern (6+ digits)
+      // Members-only pages show "Sign In for Price" instead of a price — return null immediately.
+      // This text only appears in the product pricing area on restricted items.
+      const signInEl = document.querySelector('[data-testid*="sign-in-price"], [data-testid*="signin-price"], [data-testid*="signInForPrice"]');
+      const hasMembersOnlyText = /Sign\s+In\s+for\s+Price|Members\s+Only\s+Price/i.test(document.body.innerText);
+      if (signInEl || hasMembersOnlyText) {
+        return { name, price: null, itemNumber: `costco-${Date.now()}`, weight: null, imageUrls: [], features: [], membersOnly: true };
+      }
+
+      const priceContentEl = document.querySelector('[data-testid="single-price-content"]');
+      if (priceContentEl) {
+        const raw = priceContentEl.textContent.replace(/,/g, '').trim();
+        // raw is something like "$18.99" or "$18" + superscript "99" → combine digits
+        const m = raw.match(/[\d]+\.[\d]{2}/) || raw.match(/\$([\d]+)/);
+        if (m) {
+          price = parseFloat(m[0].replace('$', ''));
+        } else {
+          // whole value and cents may be in separate spans with no dot between them
+          const whole = document.querySelector('[data-testid="Text_single-price-whole-value"]')?.textContent.trim();
+          const cents = document.querySelector('[data-testid="Text_single-price-decimal-value"]')?.textContent.trim();
+          if (whole) price = parseFloat(`${whole}.${cents || '00'}`);
+        }
+      }
+
+      if (price === null) {
+        // MUI fallback: price >= $8 to exclude delivery fees ($3.00), not in shipping section
+        const muiEls = Array.from(document.querySelectorAll('[class*="Mui"]'));
+        const priceEl = muiEls.find((el) => {
+          const t = el.textContent.trim();
+          if (!/^\$[0-9]/.test(t)) return false;
+          const firstPrice = t.match(/^\$[\d,]+\.\d{2}/);
+          if (!firstPrice || firstPrice[0].length < t.length - 1) return false;
+          const val = parseFloat(firstPrice[0].replace(/[$,]/g, ''));
+          if (val < 8) return false;
+          let node = el.parentElement;
+          while (node && node !== document.body) {
+            if (/delivery|shipping|freight/i.test(node.textContent.slice(0, 60))) return false;
+            node = node.parentElement;
+          }
+          return true;
+        });
+        if (priceEl) {
+          const m = priceEl.textContent.replace(/,/g, '').match(/\d+\.\d{2}/);
+          if (m) price = parseFloat(m[0]);
+        }
+      }
+
       const bodyText = document.body.innerText;
       const itemMatch = bodyText.match(/Item\s*#?\s*([0-9]{6,})/i);
       const itemNumber = itemMatch ? itemMatch[1] : `costco-${Date.now()}`;
 
-      // --- Weight ---
-      // Look for weight in spec table rows or body text
       const weightMatch = bodyText.match(/Weight[:\s]+([0-9.]+)\s*(lb|lbs|oz|kg|g\b)/i);
       const weight = weightMatch ? parseFloat(weightMatch[1]) : null;
 
-      // --- Images ---
-      // Costco now uses bfasset.costco-static.com CDN
-      // Product shots have "__N" in their path (e.g. 416076-847__1, 416076-847__2)
-      // Request 1024×1024 for good resolution
+      // Collect images from src and data-src; drop the /__[0-9] restriction
+      // which is too strict for products using paths like /__web/ or hash-based paths
       const imageUrls = [...new Set(
         Array.from(document.querySelectorAll('img'))
-          .filter((img) => img.src && img.src.includes('bfasset.costco-static.com') && /__[0-9]/.test(img.src))
-          .map((img) => {
-            const base = img.src.split('?')[0];
-            return `${base}?auto=webp&format=jpg&width=1024&height=1024&fit=bounds&canvas=1024,1024`;
+          .flatMap((img) => [img.src, img.dataset.src, img.getAttribute('data-lazy-src')].filter(Boolean))
+          .filter((src) => src.includes('bfasset.costco-static.com'))
+          .map((src) => {
+            const base = src.split('?')[0];
+            return `${base}?format=jpg&width=1024&height=1024&fit=bounds&canvas=1024,1024`;
           })
       )];
 
-      // --- Description ---
-      // Combine product feature bullets + spec table rows
       const features = Array.from(document.querySelectorAll('.MuiListItemText-root'))
         .map((el) => el.textContent.trim())
         .filter((t) => t.length > 0 && t.length < 300);
 
-      const specRows = Array.from(document.querySelectorAll('table tr'))
-        .map((el) => el.textContent.trim())
-        .filter((t) => t.length > 0 && t.length < 200);
-
-      const description = [
-        features.length > 0 ? '<ul>' + features.map((f) => `<li>${f}</li>`).join('') + '</ul>' : '',
-        specRows.length > 0 ? '<ul>' + specRows.map((r) => `<li>${r}</li>`).join('') + '</ul>' : ''
-      ].filter(Boolean).join('');
-
-      return { name, price, itemNumber, weight, imageUrls, description };
+      return { name, price, itemNumber, weight, imageUrls, features };
     });
 
     return {
@@ -128,11 +213,13 @@ async function scrapeProductPage(url) {
       price: data.price,
       itemNumber: data.itemNumber,
       weight: data.weight,
-      description: data.description || '',
+      features: data.features || [],
       imageUrls: data.imageUrls
     };
   } finally {
     if (browser) await browser.close();
+    // Clean up the temp profile dir so they don't accumulate
+    try { require('fs').rmSync(userDataDir, { recursive: true, force: true }); } catch {}
   }
 }
 

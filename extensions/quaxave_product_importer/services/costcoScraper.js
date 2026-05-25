@@ -18,14 +18,14 @@ async function scrapeCostcoProduct(url) {
   let browser;
   try {
     browser = await puppeteer.launch({
-      headless: 'new',
+      headless: true,
       args: [
         '--no-sandbox',
         '--disable-setuid-sandbox',
         '--disable-blink-features=AutomationControlled',
         '--disable-infobars',
         '--window-size=1366,768',
-        '--user-data-dir=/tmp/costco-scraper-profile'
+        `--user-data-dir=${require('os').tmpdir()}/costco-scraper-profile`
       ]
     });
 

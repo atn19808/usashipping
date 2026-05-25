@@ -19,7 +19,28 @@
 const createProduct = require('@evershop/evershop/src/modules/catalog/services/product/createProduct');
 const { buildUrl } = require('@evershop/evershop/src/lib/router/buildUrl');
 
-async function createEverShopProduct({ name, sku, price, weight, description, imageUrls }) {
+function toEditorJson(features) {
+  if (!features || features.length === 0) return JSON.stringify([]);
+  return JSON.stringify([
+    {
+      id: 'row-1',
+      size: 1,
+      columns: [
+        {
+          id: 'col-1',
+          size: 1,
+          data: {
+            time: Date.now(),
+            blocks: [{ id: 'blk-1', type: 'list', data: { items: features } }],
+            version: '2.30.2'
+          }
+        }
+      ]
+    }
+  ]);
+}
+
+async function createEverShopProduct({ name, sku, price, weight, features, imageUrls }) {
   const url_key = name
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, '-')
@@ -38,7 +59,7 @@ async function createEverShopProduct({ name, sku, price, weight, description, im
         visibility: 1,
         group_id: 1,
         url_key,
-        description: description || '',
+        description: toEditorJson(features),
         images: imageUrls || []
       },
       { routeId: 'importScrapedProduct' }
