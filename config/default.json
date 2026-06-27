@@ -2,7 +2,8 @@
   "shop": {
     "homeUrl": "https://quaxave.com",
     "weightUnit": "lb",
-    "language": "vi"
+    "language": "vi",
+    "priceLocale": "en-US"
   },
   "system": {
     "theme": "usashipping",
@@ -92,7 +93,7 @@
         }
       ]
     },
-    "copyRight": "© 2025 Qua Xa Ve. All rights reserved."
+    "copyRight": "© 2025 Quà Xa Về. Bảo lưu mọi quyền."
   },
   "customer": {
     "addressSchema": {

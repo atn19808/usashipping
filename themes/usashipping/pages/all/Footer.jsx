@@ -5,7 +5,7 @@ function Footer({ themeConfig: { copyRight } }) {
     return (
         <div className="page-width footer-bar">
             <nav className="footer-nav">
-                <a href="/page/about-us">About Us</a>
+                <a href="/page/about-us">Giới thiệu</a>
             </nav>
             <div className="copyright text-textSubdued">
                 <span>{copyRight}</span>
@@ -22,7 +22,7 @@ Footer.propTypes = {
 
 Footer.defaultProps = {
     themeConfig: {
-        copyRight: '© 2025 Qua Xa Ve. All Rights Reserved.'
+        copyRight: '© 2025 Quà Xa Về. Bảo lưu mọi quyền.'
     }
 };
 
