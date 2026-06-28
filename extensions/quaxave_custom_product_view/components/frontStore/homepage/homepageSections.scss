@@ -1,0 +1,210 @@
+// Styles for the config-driven homepage sections (IconCarousel, PromoGrid).
+// Class prefix: `hp-` (homepage). Mirrors the page-width / tab patterns already
+// used elsewhere in the theme.
+
+$hp-accent: var(--color-primary, #1a73e8);
+$hp-muted: var(--color-text-muted, #6b7280);
+$hp-border: var(--color-border, #e5e7eb);
+
+.hp-section {
+  padding: 24px 0 32px;
+
+  & + .hp-section {
+    border-top: 1px solid $hp-border;
+  }
+}
+
+.hp-heading {
+  font-size: 1.8rem;
+  font-weight: 700;
+  margin: 0 0 16px;
+}
+
+// ── Icon tab row (Hot Picks) ───────────────────────────────────────────────
+.hp-icon-tabs {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding-bottom: 8px;
+  margin-bottom: 16px;
+  scrollbar-width: thin;
+
+  -webkit-overflow-scrolling: touch;
+}
+
+.hp-icon-tab {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  flex: 0 0 auto;
+  min-width: 84px;
+  padding: 10px 12px;
+  border: 1px solid $hp-border;
+  border-radius: 10px;
+  background: #fff;
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s, background 0.15s;
+
+  &:hover {
+    border-color: $hp-accent;
+  }
+
+  &.active {
+    border-color: $hp-accent;
+    color: $hp-accent;
+    background: color-mix(in srgb, $hp-accent 8%, #fff);
+    font-weight: 600;
+  }
+}
+
+.hp-icon-img {
+  width: 32px;
+  height: 32px;
+  object-fit: contain;
+}
+
+.hp-icon-label {
+  font-size: 1.2rem;
+  line-height: 1.2;
+  text-align: center;
+}
+
+// ── Text tab row (By Audience, Brands) ─────────────────────────────────────
+.hp-section-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 12px 24px;
+  margin-bottom: 16px;
+}
+
+.hp-text-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.hp-text-tab {
+  padding: 6px 14px;
+  border: 1px solid $hp-border;
+  border-radius: 10px; // match .hp-icon-tab (consistent tab shape)
+  background: #fff;
+  cursor: pointer;
+  font-size: 1.3rem;
+  transition: border-color 0.15s, color 0.15s, background 0.15s;
+
+  &:hover {
+    border-color: $hp-accent;
+  }
+
+  // Match the icon-tab active state (outline + light tint) for a consistent
+  // "selected tab" look across all sections.
+  &.active {
+    border-color: $hp-accent;
+    color: $hp-accent;
+    background: color-mix(in srgb, $hp-accent 8%, #fff);
+    font-weight: 600;
+  }
+}
+
+// ── Promo image + product grid layout ──────────────────────────────────────
+.hp-promo-layout {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 16px;
+
+  @media (min-width: 1024px) {
+    grid-template-columns: 280px 1fr;
+    align-items: start;
+  }
+}
+
+// No promo image yet → let the product grid use the full width (matches the
+// clean Hot Picks row). The side-banner layout returns once promoImage is set.
+.hp-promo-layout--no-image {
+  grid-template-columns: 1fr;
+
+  @media (min-width: 1024px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.hp-promo-img {
+  display: none; // hidden on small screens to keep the product grid prominent
+
+  @media (min-width: 1024px) {
+    display: block;
+    border-radius: 12px;
+    overflow: hidden;
+
+    img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+  }
+}
+
+.hp-promo-products {
+  min-width: 0; // allow the grid to shrink within the layout column
+}
+
+// ── Shared bits ────────────────────────────────────────────────────────────
+.hp-view-all {
+  display: flex;
+  justify-content: center;
+  margin-top: 20px;
+}
+
+.hp-view-all-btn {
+  display: inline-block;
+  padding: 8px 24px;
+  border: 1px solid $hp-border;
+  border-radius: 999px;
+  font-size: 1.3rem;
+  color: inherit;
+  text-decoration: none;
+  transition: border-color 0.15s, color 0.15s;
+
+  &:hover {
+    border-color: $hp-accent;
+    color: $hp-accent;
+  }
+}
+
+.hp-empty {
+  text-align: center;
+  font-size: 1.4rem;
+  color: $hp-muted;
+  padding: 40px 0;
+}
+
+// ── Loading skeleton ───────────────────────────────────────────────────────
+.hp-skeleton-row {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+
+  @media (min-width: 640px) {
+    grid-template-columns: repeat(3, 1fr);
+  }
+  @media (min-width: 1024px) {
+    grid-template-columns: repeat(5, 1fr);
+  }
+
+  .skeleton-card {
+    aspect-ratio: 3 / 4;
+    border-radius: 8px;
+    background: linear-gradient(90deg, #f0f0f0 25%, #e6e6e6 37%, #f0f0f0 63%);
+    background-size: 400% 100%;
+    animation: hp-shimmer 1.4s ease infinite;
+  }
+}
+
+@keyframes hp-shimmer {
+  0% { background-position: 100% 50%; }
+  100% { background-position: 0 50%; }
+}
