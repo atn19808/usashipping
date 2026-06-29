@@ -58,8 +58,8 @@ Extensions are registered and priority-ordered in [`config/default.json`](config
 | 60 | `quaxave_fetch_pricing` | Fetches USD→VND exchange rate every 12h, stores in `fx_rate` table |
 | 70 | `quaxave_weight_base_shipping` | Weight-based shipping calculator (flat rate, weight tiers, price tiers, external API) |
 | 90 | `quaxave_custom_cart` | Cart UI, COD/Zelle payment, admin order management |
-| — | `quaxave_price_scraper` | Price scraping from Costco/Walmart via Google Sheets API |
-| — | `quaxave_sync_product_pricing` | Product price sync (in progress) |
+| 100 | `quaxave_product_importer` | Import Costco products via Puppeteer scraping (admin Product Import page + scrape/import APIs) |
+| 110 | `quaxave_sync_product_pricing` | Product price sync — scrape live Costco prices, stage for admin review (in progress) |
 
 ### Extension Structure
 
@@ -192,6 +192,9 @@ See [dev-docs/AZ_DEPLOYMENT.md](dev-docs/AZ_DEPLOYMENT.md) for full setup instru
 | Job | Schedule | Description |
 |---|---|---|
 | `fetchRate` | Every 12 hours (`0 */12 * * *`) | Fetches latest USD→VND exchange rate |
+| `scrapeAndStagePrices` | Daily at 02:00 (`0 2 * * *`) | Scrapes live Costco prices and stages them for admin review |
+
+> Note: both jobs are currently `enabled: false` in `config/default.json` — automated runs are off.
 
 ---
 

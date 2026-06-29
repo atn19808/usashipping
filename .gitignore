@@ -31,6 +31,12 @@ azure_dump.dump
 .env.azure_backup
 .env.dev
 
+# local Claude Code settings — accumulates ad-hoc commands/secrets, keep out of git
+.claude/settings.local.json
+
+# stray downloaded docs (e.g. cert exam guides)
+*.pdf
+
 # service account keys and other secrets in config/
 config/*.json
 !config/default.json

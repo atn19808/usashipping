@@ -34,7 +34,7 @@ jobs:
           npm run test --if-present
 
       - name: Zip artifact for deployment
-        run: zip -y release.zip . -r -x 'release.zip' '.github/*' '.git/*' '.gitignore' 'README.md' '.env' 'media/*'
+        run: zip -y release.zip . -r -x 'release.zip' '.github/*' '.git/*' '.gitignore' 'README.md' '.env*' 'media/*'
 
       - name: Upload artifact for deployment job
         uses: actions/upload-artifact@v4
