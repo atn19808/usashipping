@@ -68,7 +68,7 @@
         "name": "fetchRate",
         "resolve": "@evershop/../../extensions/quaxave_fetch_pricing/jobs/fetchRate.js",
         "schedule": "0 */12 * * *",
-        "enabled": false
+        "enabled": true
       },
       {
         "name": "scrapeAndStagePrices",
