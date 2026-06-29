@@ -40,13 +40,13 @@ module.exports = async (request, response, deledate, next) => {
 
     if (!shippingZone) {
       response.status(INVALID_PAYLOAD);
-      response.json({
+      response.$body = {
         error: {
           status: INVALID_PAYLOAD,
           message: 'Invalid zone id'
         }
-      });
-      return;
+      };
+      return next();
     }
 
     const zoneMethodQuery = select().from('shipping_method');
@@ -64,13 +64,13 @@ module.exports = async (request, response, deledate, next) => {
     const zoneMethod = await zoneMethodQuery.load(connection, false);
     if (!zoneMethod) {
       response.status(INVALID_PAYLOAD);
-      response.json({
+      response.$body = {
         error: {
           status: INVALID_PAYLOAD,
           message: 'Invalid method id'
         }
-      });
-      return;
+      };
+      return next();
     }
 
     if (calculation_type === 'api') {
@@ -90,7 +90,6 @@ module.exports = async (request, response, deledate, next) => {
       min = max = null;
     }
 
-    console.log('weight_based_rate', weight_based_rate);
     const updateZoneMethod = await update('shipping_zone_method')
       .given({
         cost,
@@ -108,17 +107,19 @@ module.exports = async (request, response, deledate, next) => {
       .execute(connection, false);
     await commit(connection);
     response.status(OK);
-    response.json({
+    response.$body = {
       data: updateZoneMethod
-    });
+    };
+    next();
   } catch (e) {
     await rollback(connection);
     response.status(INTERNAL_SERVER_ERROR);
-    response.json({
+    response.$body = {
       error: {
         status: INTERNAL_SERVER_ERROR,
         message: e.message
       }
-    });
+    };
+    next();
   }
 };

@@ -22,19 +22,19 @@ module.exports = async (request, response, delegate, next) => {
       .load(pool);
     if (!cart) {
       response.status(INVALID_PAYLOAD);
-      response.json({
+      response.$body = {
         error: {
           status: INVALID_PAYLOAD,
           message: 'Cart not found'
         }
-      });
-      return;
+      };
+      return next();
     }
 
     if (!country) {
       response.status(OK);
-      response.json({ data: { methods: [] } });
-      return;
+      response.$body = { data: { methods: [] } };
+      return next();
     }
 
     const zoneQuery = select().from('shipping_zone');
@@ -58,12 +58,12 @@ module.exports = async (request, response, delegate, next) => {
     const zone = await zoneQuery.load(pool);
     if (!zone) {
       response.status(200);
-      response.json({
+      response.$body = {
         data: {
           methods: []
         }
-      });
-      return;
+      };
+      return next();
     }
 
     const methodsQuery = select().from('shipping_method');
@@ -193,11 +193,12 @@ module.exports = async (request, response, delegate, next) => {
     next();
   } catch (e) {
     response.status(INTERNAL_SERVER_ERROR);
-    response.json({
+    response.$body = {
       error: {
         status: INTERNAL_SERVER_ERROR,
         message: e.message
       }
-    });
+    };
+    next();
   }
 };

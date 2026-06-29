@@ -62,13 +62,13 @@ module.exports = async (request, response, deledate, next) => {
 
     if (!zone) {
       response.status(INVALID_PAYLOAD);
-      response.json({
+      response.$body = {
         error: {
           status: INVALID_PAYLOAD,
           message: 'Invalid zone id'
         }
-      });
-      return;
+      };
+      return next();
     }
 
     const method = await select()
@@ -78,13 +78,13 @@ module.exports = async (request, response, deledate, next) => {
 
     if (!method) {
       response.status(INVALID_PAYLOAD);
-      response.json({
+      response.$body = {
         error: {
           status: INVALID_PAYLOAD,
           message: 'Invalid method id'
         }
-      });
-      return;
+      };
+      return next();
     }
 
     const zoneMethod = await insert('shipping_zone_method')
@@ -104,17 +104,19 @@ module.exports = async (request, response, deledate, next) => {
       .execute(connection);
     await commit(connection);
     response.status(OK);
-    response.json({
+    response.$body = {
       data: zoneMethod
-    });
+    };
+    next();
   } catch (e) {
     await rollback(connection);
     response.status(INTERNAL_SERVER_ERROR);
-    response.json({
+    response.$body = {
       error: {
         status: INTERNAL_SERVER_ERROR,
         message: e.message
       }
-    });
+    };
+    next();
   }
 };
