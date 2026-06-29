@@ -6,6 +6,17 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 EverShop v1.2.2-based e-commerce store ("Qua Xa Ve") for international product shipping. Custom features are implemented as extensions in `extensions/`, not by modifying EverShop core. See `README.md` for full feature list.
 
+## AI harness — what actually blocks (read this)
+
+Governance in this repo is split between **mechanical gates** and **coaching**. Do not confuse them:
+
+- **MECHANICAL (these block tool calls — exit 2):** the `.cjs` hooks in `.claude/hooks/` (`git-commit-block`, `path-boundary-block`, `privacy-block`, `windows-command-detector`) plus the coarse `permissions.deny` list in `.claude/settings.json`. These are the *only* things that stop an action. They are unit-tested: `node .claude/hooks/tests/run-all-tests.cjs`. See [.claude/hooks/README.md](.claude/hooks/README.md).
+- **COACHING (advisory — nothing enforces these):** every file under `.claude/rules/` and `.claude/commands/`. They describe conventions; an agent can ignore them. They are guidance, not guarantees.
+
+Consequence: never assume a rule is "enforced." If a constraint matters, it must be a hook (see the roadmap in [docs/research/quaxave-harness-adoption-plan.md](docs/research/quaxave-harness-adoption-plan.md)). Hooks fail **open** by design — a hook error never blocks work.
+
+Notable hook behaviors: commits/pushes require an explicit `tmp/claude-temp/.commit-skill-active` marker; `git push origin dev|main` is a **deploy to Azure**; editing `node_modules/@evershop/**` is blocked (use `patch-package`, or `tmp/claude-temp/.patch-active` for deliberate patches); secret files (`.env`, credentials, `*.publishsettings`) need an `APPROVED:` retry.
+
 ## Commands
 
 ```bash
